@@ -142,6 +142,8 @@ $result = $stmt->get_result();
       <a href="system_logs.php" class="block px-4 py-3 hover:bg-gray-100 rounded-md flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
         <i class="fas fa-file-alt w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Logs</span>
       </a>
+          <a href="settings.php" class="block px-4 py-3 hover:bg-gray-100 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-cogs w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Settings</span></a>
+
       <a href="logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
         <i class="fas fa-sign-out-alt w-5 text-center text-lg"></i><span x-show="sidebarOpen">Logout</span>
       </a>
