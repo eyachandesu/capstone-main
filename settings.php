@@ -54,6 +54,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_settings'])) {
         $settings = mysqli_fetch_assoc($result);
     }
 }
+
+// --- NEW CODE: Handle Database Reset ---
+$reset_success = false;
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reset_database'])) {
+    // List of tables to clear in order (Business data only)
+    $tables_to_clear = [
+        'transactions',
+        'refunds',
+        'order_items',
+        'orders',
+        'stock_adjustments',
+        'stock_in',
+        'stock',
+        'product_colors',
+        'product_sizes',
+        'products',
+        'categories',
+        'cart_items',
+        'carts',
+        'customers',
+        'system_logs' // We clear logs too for a fresh start
+    ];
+
+    // Disable foreign key checks to allow TRUNCATE
+    mysqli_query($conn, "SET FOREIGN_KEY_CHECKS = 0");
+
+    foreach ($tables_to_clear as $table) {
+        mysqli_query($conn, "TRUNCATE TABLE $table");
+    }
+
+    // Re-enable foreign key checks
+    mysqli_query($conn, "SET FOREIGN_KEY_CHECKS = 1");
+
+    // Add a single log entry back so the log isn't empty
+    $username = $_SESSION['username'] ?? $admin_name;
+    $action_note = "PERFORMED FULL SYSTEM RESET (Business data cleared)";
+    mysqli_query($conn, "INSERT INTO system_logs (user_id, username, action, role_id) VALUES ($admin_id, '$username', '$action_note', (SELECT role_id FROM adminusers WHERE admin_id=$admin_id))");
+    
+    $reset_success = true;
+}
 ?>
 
 <!DOCTYPE html>
@@ -205,6 +245,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_settings'])) {
         </div>
         <?php endif; ?>
 
+        <?php if($reset_success): ?>
+        <div class="bg-orange-50 border border-orange-200 text-orange-600 px-4 py-3 rounded-xl animate-fade-in flex items-center shadow-sm">
+            <i class="fas fa-history mr-2"></i> System reset complete! All store data cleared.
+        </div>
+        <?php endif; ?>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Store Configuration Card -->
@@ -248,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_settings'])) {
                     <i class="fas fa-database text-blue-400"></i>
                     <h2 class="font-bold text-gray-700 uppercase tracking-wider">Database Maintenance</h2>
                 </div>
-                <div class="p-6 space-y-8">
+                <div class="p-6 space-y-6">
                     <!-- Backup -->
                     <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100">
                         <h3 class="font-bold text-blue-700 flex items-center"><i class="fas fa-download mr-2"></i> System Backup</h3>
@@ -268,6 +314,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_settings'])) {
                             <input type="file" name="backup_file" required class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 mb-4 cursor-pointer">
                             <button type="submit" name="restore_db" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg transition text-xs shadow-sm">
                                 RESTORE SYSTEM
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Factory Reset -->
+                    <div class="p-4 rounded-2xl bg-orange-50 border border-orange-100">
+                        <h3 class="font-bold text-orange-700 flex items-center"><i class="fas fa-trash-alt mr-2"></i> Factory Reset</h3>
+                        <p class="text-xs text-orange-600/70 mb-4 mt-1">Wipes all business data (Products, Orders, Logs). <b>Admins and Roles are kept.</b></p>
+                        <form method="POST" onsubmit="return confirm('CRITICAL WARNING: This will permanently delete all store products, orders, and customer data. Proceed?')">
+                            <button type="submit" name="reset_database" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg transition text-xs shadow-sm">
+                                RESET ALL STORE DATA
                             </button>
                         </form>
                     </div>

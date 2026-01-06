@@ -1,5 +1,4 @@
 <?php
-// Database connection
 session_start();
 require 'admin_only.php';
 require 'conn.php';
