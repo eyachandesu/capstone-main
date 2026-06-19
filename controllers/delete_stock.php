@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ✅ Redirect back with success flag
-    header("Location: stock_management.php?deleted=1");
+    header("Location: /public/stock_management.php?deleted=1");
     exit;
 } else {
     die("Invalid request.");

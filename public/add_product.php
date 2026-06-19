@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 $preselectedCategoryId = isset($_GET['category_id']) ? intval($_GET['category_id']) : null;
 

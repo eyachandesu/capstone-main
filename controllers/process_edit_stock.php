@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config/conn.php';
 
 // Check if Admin is logged in
 if (!isset($_SESSION['admin_id'])) {
-    header("Location: login.php");
+    header("Location: /public/login.php");
     exit;
 }
 
@@ -68,17 +68,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt_log->close();
 
         $conn->commit();
-        header("Location: stock_management.php?status=success&msg=Stock and Prices Updated");
+        header("Location: /public/stock_management.php?status=success&msg=Stock and Prices Updated");
         exit;
 
     } catch (Exception $e) {
         $conn->rollback();
-        header("Location: stock_management.php?status=error&msg=" . urlencode($e->getMessage()));
+        header("Location: /public/stock_management.php?status=error&msg=" . urlencode($e->getMessage()));
         exit;
     }
 
 } else {
-        header("Location: stock_management.php");
+        header("Location: /public/stock_management.php");
     exit;
 }
 ?>

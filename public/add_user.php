@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // ✅ Generate CSRF token if not exists
 if (empty($_SESSION['csrf_token'])) {

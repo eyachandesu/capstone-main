@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("sssis", $name, $email, $phone, $category_id, $reg_date);
     $stmt->execute();
 
-    header("Location: suppliers.php"); // redirect back
+    header("Location: /public/suppliers.php"); // redirect back
     exit;
 }
 ?>

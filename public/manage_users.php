@@ -1,13 +1,17 @@
 <?php
 session_start();
-require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../config/conn.php';
+//require_once __DIR__ . '/../controllers/admin_only.php';
+require_once __DIR__ . '/../config/config.php';
 
 // 1. Initialize Admin Session Data
-$admin_id   = $_SESSION['admin_id'] ?? null;
-$admin_name = "Admin";
-$admin_role = "Admin";
-$admin_role_id = $_SESSION['role_id']; // This is YOUR role ID
+$admin_id      = $_SESSION['admin_id'] ?? null;
+$admin_role_id = $_SESSION['role_id'] ?? null; // Added fallback to prevent errors
+
+// Fetch real name from session if you saved it during login, otherwise fallback to "Admin"
+$admin_name = $_SESSION['first_name'] ?? $_SESSION['username'] ?? "Admin"; 
+
+// Dynamically set the role name text based on the ID
+$admin_role = ($admin_role_id == 2) ? "Admin" : "Cashier";
 
 // 2. Handle Search Input
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';

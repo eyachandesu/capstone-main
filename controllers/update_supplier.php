@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("sssii", $name, $email, $phone, $category_id, $id);
 
     if ($stmt->execute()) {
-        header("Location: suppliers.php");
+        header("Location: /public/suppliers.php");
         exit();
     } else {
         echo "Error updating supplier: " . $stmt->error;

@@ -37,6 +37,6 @@ session_unset();
 session_destroy();
 
 // 5. Redirect
-header("Location: login.php");
+header("Location: /public/login.php");
 exit;
 ?>

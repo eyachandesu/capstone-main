@@ -5,14 +5,14 @@ require_once __DIR__ . '/../config/conn.php';
 // ✅ Only Admin (role_id = 2) can toggle user status
 if (!isset($_SESSION['admin_id']) || $_SESSION['role_id'] != 2) {
     $_SESSION['message'] = "Unauthorized access.";
-    header("Location: manage_users.php");
+    header("Location: /public/manage_users.php");
     exit();
 }
 
 // ✅ Ensure valid parameters
 if (!isset($_GET['id']) || !isset($_GET['status'])) {
     $_SESSION['message'] = "Invalid request.";
-    header("Location: manage_users.php");
+    header("Location: /public/manage_users.php");
     exit();
 }
 
@@ -23,7 +23,7 @@ $current_admin_id = $_SESSION['admin_id'];
 // 🧩 Prevent Admin from deactivating their own account
 if ($target_id === $current_admin_id) {
     $_SESSION['message'] = "You cannot deactivate your own account.";
-    header("Location: manage_users.php");
+    header("Location: /public/manage_users.php");
     exit();
 }
 
@@ -35,7 +35,7 @@ $roleResult = $roleCheck->get_result();
 
 if ($roleResult->num_rows === 0) {
     $_SESSION['message'] = "User not found.";
-    header("Location: manage_users.php");
+    header("Location: /public/manage_users.php");
     exit();
 }
 
@@ -46,7 +46,7 @@ $roleCheck->close();
 // 🚫 Prevent Admin from deactivating another Admin
 if ($target_role_id == 2) {
     $_SESSION['message'] = "You cannot activate/deactivate another Admin.";
-    header("Location: manage_users.php");
+    header("Location: /public/manage_users.php");
     exit();
 }
 
@@ -58,7 +58,7 @@ $statusResult = $statusCheck->get_result();
 
 if ($statusResult->num_rows === 0) {
     $_SESSION['message'] = "Invalid status.";
-    header("Location: manage_users.php");
+    header("Location: /public/manage_users.php");
     exit();
 }
 
@@ -79,5 +79,5 @@ if ($stmt->execute()) {
 $stmt->close();
 $conn->close();
 
-header("Location: manage_users.php");
+header("Location: /public/manage_users.php");
 exit();

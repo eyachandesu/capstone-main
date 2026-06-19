@@ -3,7 +3,7 @@ ob_start();
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // Prevent output buffering issues
 if (headers_sent($file, $line)) {
@@ -37,7 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
                 // ✅ Login Success
                 $_SESSION["loggedin"] = true;
                 $_SESSION["admin_id"] = $admin_id;
-                $_SESSION["role_id"] = $role_id;
+                $_SESSION["role_id"]  = $role_id;
+                $_SESSION["username"] = $db_username; // Added so the sidebar shows your name!
 
                 $log_action = "Login";
                 
@@ -55,6 +56,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
                     $update_stmt->execute();
                     $update_stmt->close();
                 }
+
+                // 🛑 CRITICAL FIX: Force PHP to save the session BEFORE redirecting
+                session_write_close(); 
 
                 if ($role_id == 2) {
                     header("Location: dashboard.php");
@@ -90,10 +94,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
                     // ✅ Login Success
                     $_SESSION["loggedin"] = true;
                     $_SESSION["role"] = "Customer";
+                    $_SESSION["customer_id"] = $customer_id; // Added safety fallback
+                    $_SESSION["email"] = $db_email;
                     
                     // Note: We do NOT log customers into 'system_logs' because that table 
                     // has a Foreign Key linking 'user_id' to 'adminusers'. 
                     
+                    // 🛑 CRITICAL FIX: Force PHP to save the session BEFORE redirecting
+                    session_write_close();
+
                     header("Location: customerside/homepage.php");
                     exit;
                 }

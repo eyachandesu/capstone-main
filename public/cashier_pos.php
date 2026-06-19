@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // --- SETTINGS ---
 ini_set('display_errors', 0);

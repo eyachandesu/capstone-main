@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $category_name = trim($_POST['category_name']);
 
     if (empty($category_name) || !$category_id) {
-        echo "<script>alert('Invalid input!'); window.location.href='categories.php';</script>";
+        echo "<script>alert('Invalid input!'); window.location.href='/public/categories.php';</script>";
         exit;
     }
 
@@ -38,9 +38,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $log->close();
         }
 
-        echo "<script>alert('Category updated successfully!'); window.location.href='categories.php';</script>";
+        echo "<script>alert('Category updated successfully!'); window.location.href='/public/categories.php';</script>";
     } else {
-        echo "<script>alert('Error updating category. Please try again.'); window.location.href='categories.php';</script>";
+        echo "<script>alert('Error updating category. Please try again.'); window.location.href='/public/categories.php';</script>";
     }
 
     $stmt->close();

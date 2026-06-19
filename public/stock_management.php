@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 
 function e($v) { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }

@@ -1,6 +1,6 @@
 <?php
-//require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../controllers/admin_only.php';
+require_once __DIR__ . '/../config/config.php';
 
 $admin_id = $_SESSION['admin_id'] ?? null;
 $admin_name = "Admin";

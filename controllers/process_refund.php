@@ -97,7 +97,7 @@ try {
     $trans_stmt->close();
 
     $conn->commit();
-    echo "<script>alert('✅ Refund successful!'); window.location.href='pointofsale.php';</script>";
+    echo "<script>alert('✅ Refund successful!'); window.location.href='/public/pointofsale.php';</script>";
 } catch (Exception $e) {
     $conn->rollback();
     die("❌ Refund failed: " . $e->getMessage());

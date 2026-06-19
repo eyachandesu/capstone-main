@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $logStmt->close();
 
     // 9️⃣ Redirect back
-    header("Location: stock_management.php?success=1");
+    header("Location: /public/stock_management.php?success=1");
     exit;
 } else {
     die("Invalid request method.");

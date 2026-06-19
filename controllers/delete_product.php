@@ -5,12 +5,12 @@ require_once __DIR__ . '/../config/conn.php';
 
 // ✅ Require admin session
 if (!isset($_SESSION['admin_id'])) {
-    header("Location: login.php");
+    header("Location: /public/login.php");
     exit;
 }
 
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    echo "<script>alert('Invalid product ID!'); window.location.href='products.php';</script>";
+    echo "<script>alert('Invalid product ID!'); window.location.href='/public/products.php';</script>";
     exit;
 }
 
@@ -80,9 +80,9 @@ if ($success) {
         $path = 'uploads/products/' . basename($img);
         if (file_exists($path)) unlink($path);
     }
-    echo "<script>alert('Product deleted successfully!'); window.location.href='products.php';</script>";
+    echo "<script>alert('Product deleted successfully!'); window.location.href='/public/products.php';</script>";
 } else {
-    echo "<script>alert('Failed to delete product.'); window.location.href='products.php';</script>";
+    echo "<script>alert('Failed to delete product.'); window.location.href='/public/products.php';</script>";
 }
 
 $conn->close();

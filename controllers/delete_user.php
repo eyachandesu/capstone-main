@@ -4,7 +4,7 @@ session_start();
 require_once __DIR__ . '/../config/conn.php';
 
 if (!isset($_SESSION['admin_id']) || $_SESSION['role_id'] != 2) {
-    header("Location: login.php");
+    header("Location: /public/login.php");
     exit();
 }
 
@@ -22,5 +22,5 @@ if (isset($_GET['id'])) {
     }
     $stmt->close();
 }
-header("Location: manage_users.php");
+header("Location: /public/manage_users.php");
 exit();

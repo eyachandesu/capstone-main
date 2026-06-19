@@ -7,7 +7,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $category_id = intval($_POST['category_id']);
 
     if (!$category_id) {
-        echo "<script>alert('Invalid category ID!'); window.location.href='categories.php';</script>";
+        echo "<script>alert('Invalid category ID!'); window.location.href='/public/categories.php';</script>";
         exit;
     }
 
@@ -39,9 +39,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $log->close();
         }
 
-        echo "<script>alert('Category deleted successfully!'); window.location.href='categories.php';</script>";
+        echo "<script>alert('Category deleted successfully!'); window.location.href='/public/categories.php';</script>";
     } else {
-        echo "<script>alert('Error deleting category. Please try again.'); window.location.href='categories.php';</script>";
+        echo "<script>alert('Error deleting category. Please try again.'); window.location.href='/public/categories.php';</script>";
     }
 
     $stmt->close();

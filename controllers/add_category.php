@@ -17,5 +17,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['category_name'])) {
     }
 }
 
-header("Location: categories.php");
+header("Location: /public/categories.php");
 exit;

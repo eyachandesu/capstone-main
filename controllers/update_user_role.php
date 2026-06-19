@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/conn.php';
 
 // ✅ Restrict access to Super Admin only
 if (!isset($_SESSION['admin_id']) || $_SESSION['role_id'] != 2) {
-    header("Location: login.php");
+    header("Location: /public/login.php");
     exit();
 }
 
@@ -27,10 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['message'] = "❌ Database error: " . $conn->error;
     }
 
-    header("Location: manage_roles.php");
+    header("Location: /public/manage_roles.php");
     exit();
 } else {
-    header("Location: manage_roles.php");
+    header("Location: /public/manage_roles.php");
     exit();
 }
 ?>

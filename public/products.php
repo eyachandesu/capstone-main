@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // 🔐 Ensure logged-in admin
 if (!isset($_SESSION['admin_id'])) {

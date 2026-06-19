@@ -1,7 +1,7 @@
 <?php
 session_start();
 // require 'admin_only.php'; // Uncomment if you have this file
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // Verify if logged in
 if (!isset($_SESSION["admin_id"])) {
