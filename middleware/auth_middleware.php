@@ -4,44 +4,56 @@ require_once __DIR__ . '/../helper/generalValidationMessage.php';
 
 function checkAuth($requiredRole = null)
 {
-    if (!isset($_COOKIE['auth_token'])) {
-        setValidation("error", "Please login to access this page.");
+    $isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
+    // 1. No token → force login
+    if (empty($_COOKIE['auth_token'])) {
+        unset($_SESSION['user_id']);
         header("Location: /public/login.php");
         exit();
     }
 
+    // 2. Validate token
     $decoded = JwtHelper::verifyToken($_COOKIE['auth_token']);
 
     if (!$decoded || !isset($decoded->data)) {
-        setcookie("auth_token", "", time() - 3600, "/");
-        setValidation("info", "Your session has expired. Please login again.");
+
+        // FULL cookie cleanup (IMPORTANT FIX)
+        setcookie("auth_token", "", [
+            "expires" => time() - 3600,
+            "path" => "/",
+            "domain" => "",
+            "secure" => $isSecure,
+            "httponly" => true,
+            "samesite" => "Lax"
+        ]);
+
+        unset($_SESSION['user_id']);
+
+        setValidation("info", "Session expired. Please login again.");
         header("Location: /public/login.php");
         exit();
     }
 
-    // Use the nested 'data' object consistently
     $userData = $decoded->data;
 
-    // Role check
-    if ($requiredRole && (!isset($userData->role) || $userData->role !== $requiredRole)) {
-        setValidation("error", "You do not have permission to view that page.");
-        header("Location: /index.php");
-        exit();
+    // 3. Role check
+    if ($requiredRole) {
+        $userRole = $userData->role ?? null;
+
+        // Convert a single string to an array so we can use in_array() for everything
+        $allowedRoles = is_array($requiredRole) ? $requiredRole : [$requiredRole];
+
+        if (!in_array($userRole, $allowedRoles)) {
+            setValidation("error", "Access denied: Insufficient permissions.");
+            header("Location: /index.php");
+            exit();
+        }
     }
 
-    // Define globals so they are accessible in the files that call this function
-    global $user_id, $username, $role_id, $role, $dept_id, $dept_name, $email, $user_status, $user_profile, $user_full_name;
-
-    $user_id = $userData->user_id ?? null;
-    $username = $userData->username ?? null;
-    $role_id = $userData->role_id ?? null;
-    $role = $userData->role ?? null;
-    $dept_id = $userData->dept_id ?? null;
-    $dept_name = $userData->dept_name ?? null;
-    $email = $userData->email ?? null;
-    $user_status = $userData->user_status ?? null;
-    $user_profile = $userData->user_profile ?? null;
-    $user_full_name = $userData->user_full_name ?? null;
+    // 4. Sync session (safe)
+    $_SESSION['user_id'] = $userData->user_id ?? null;
+    $_SESSION['role'] = $userData->role ?? null;
 
     return $userData;
 }

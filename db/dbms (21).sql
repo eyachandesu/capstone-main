@@ -48,7 +48,7 @@ CREATE TABLE `adminusers` (
 INSERT INTO `adminusers` (`admin_id`, `username`, `admin_email`, `password_hash`, `role_id`, `status_id`, `created_at`, `first_name`, `last_name`, `last_logged_in`, `last_logged_out`) VALUES
 (1, 'Eya', 'nicholedeguzman@yahoo.com', '$2y$10$ENseQNg1WhLbfCjBEi3P4ezFAjuxciD8TWR/KoKqSUAKRJAR8HiKu', 1, 1, '2025-03-30 04:35:12', 'Nichole', 'De Guzman', '2025-11-30 21:00:59', '2025-11-27 22:21:50'),
 (3, 'admin2', 'lilysmith1@email.com', '$2y$10$nO07giUvM0zjpiUREi6chOSWSRxuqRqKgT2ds6sPY0EyE93x1c6Mm', 2, 1, '2025-08-21 20:35:19', 'Lily', 'Smith', '2025-11-27 16:41:19', '2025-11-27 18:23:30'),
-(5, 'admin1', 'doejohn@gmail.com', '$2y$10$Y73IRDzJXTmdDB5cz50JzOaLtoKmGVifpEKtcGF3ehFywtzqAq/IG', 2, 1, '2025-10-11 19:43:57', 'John', 'Doe', '2025-11-30 21:05:55', '2025-11-30 21:00:54'),
+(5, 'admin1', 'doejohn@gmail.com', '$2y$12$5RTbqb6uA8C6.6tZCkNGu.YmtJFS1DBqjSALb0Xa5d6HKHnAyVrYe', 2, 1, '2025-10-11 19:43:57', 'John', 'Doe', '2025-11-30 21:05:55', '2025-11-30 21:00:54'),
 (6, 'Aisha', 'aishacayago@email.com', '$2y$10$/onU1AGHLfZfPRSS7KK2iuTNsUG5oEfh.ewlIWEpRDQXNQqy99/6q', 1, 1, '2025-10-14 04:22:08', 'Aisha', 'Cayago', '2025-10-14 18:26:04', '2025-10-14 18:50:30');
 
 -- --------------------------------------------------------

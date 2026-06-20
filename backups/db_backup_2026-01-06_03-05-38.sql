@@ -405,7 +405,7 @@ CREATE TABLE `products` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `supplier_id` int(11) DEFAULT NULL,
   `supplier_price` decimal(10,2) NOT NULL,
-  `revenue` decimal(10,2) GENERATED ALWAYS AS (`price_id` - `supplier_price`) STORED,
+`revenue` decimal(10,2) DEFAULT NULL,
   `sizes` varchar(255) DEFAULT NULL,
   `colors` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`product_id`),
