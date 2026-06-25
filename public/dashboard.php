@@ -2,10 +2,25 @@
 require_once __DIR__ . '/../init.php';
 
 $user = checkAuth();
-
+$adminId = $user->user_id ?? '';
+$adminRole = $user->role ?? 'Admin';
 
 // 1. Fetch Admin Details
-if ($admin_id) {
+
+$stmt = $conn->prepare("
+    SELECT first_name, last_name
+    FROM adminusers
+    WHERE admin_id = ?
+");
+
+$stmt->bind_param("i", $user->user_id);
+$stmt->execute();
+
+$result = $stmt->get_result();
+$admin = $result->fetch_assoc();
+
+$fullName = $admin['first_name'] . ' ' . $admin['last_name'];
+/* if ($admin_id) {
   $query = "SELECT CONCAT(first_name, ' ', last_name) AS full_name, r.role_name 
               FROM adminusers a LEFT JOIN roles r ON a.role_id = r.role_id WHERE a.admin_id = ?";
   $stmt = $conn->prepare($query);
@@ -16,7 +31,7 @@ if ($admin_id) {
     $admin_name = $row['full_name'];
     $admin_role = $row['role_name'] ?? 'Admin';
   }
-}
+}*/
 
 // === 2. FILTER HANDLING ===
 $from = $_GET['from'] ?? null;
@@ -271,8 +286,8 @@ $totalNotif = $newOrdersNotif + $lowStockNotif;
         :class="sidebarOpen ? 'space-x-3' : 'justify-center pl-0'">
         <img src="img/newID.jpg" alt="Admin" class="rounded-full w-10 h-10 flex-shrink-0" />
         <div x-show="sidebarOpen" x-transition.opacity class="whitespace-nowrap overflow-hidden">
-          <p class="font-semibold text-gray-800"><?= htmlspecialchars($admin_name); ?></p>
-          <p class="text-xs text-gray-500"><?= htmlspecialchars($admin_role); ?></p>
+          <p class="font-semibold text-gray-800"><?= htmlspecialchars($fullName); ?></p>
+          <p class="text-xs text-gray-500"><?= htmlspecialchars($adminRole); ?></p>
         </div>
       </div>
 
