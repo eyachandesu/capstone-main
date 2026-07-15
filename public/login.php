@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../init.php';
+require_once __DIR__ . '/../config/config.php';
 
 // ✅ FIX 3: Parse your validation cookie into the $error variable
 $error = '';
@@ -11,6 +11,13 @@ if (isset($_COOKIE['validation_message']) && ($_COOKIE['validation_type'] ?? '')
   setcookie("validation_message", "", time() - 3600, "/");
   setcookie("validation_type", "", time() - 3600, "/");
 }
+
+// Generate a CSRF token for this form. config.php starts the session,
+// so $_SESSION is available here.
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
 ?>
 
 
@@ -54,7 +61,8 @@ if (isset($_COOKIE['validation_message']) && ($_COOKIE['validation_type'] ?? '')
       </div>
     <?php endif; ?>
 
-    <form action="../controllers/login_handler.php" method="post" class="space-y-5">
+    <form action="/controllers/login_handler.php" method="post" class="space-y-5">
+      <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>" />
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
         <div class="relative">

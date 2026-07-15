@@ -568,10 +568,6 @@
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
-  .size-6 {
-    width: calc(var(--spacing) * 6);
-    height: calc(var(--spacing) * 6);
-  }
   .h-1\.5 {
     height: calc(var(--spacing) * 1.5);
   }
@@ -1812,9 +1808,6 @@
   .text-\[\#1E5306\] {
     color: #1E5306;
   }
-  .text-\[\#09E05F\] {
-    color: #09E05F;
-  }
   .text-\[\#33AD3D\] {
     color: #33AD3D;
   }
@@ -1829,12 +1822,6 @@
   }
   .text-\[\#AD3333\] {
     color: #AD3333;
-  }
-  .text-\[\#E00909\] {
-    color: #E00909;
-  }
-  .text-\[\#FF9C23\] {
-    color: #FF9C23;
   }
   .text-\[var\(--rose\)\] {
     color: var(--rose);

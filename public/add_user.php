@@ -1,7 +1,11 @@
 <?php
-session_start();
-require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../controllers/admin_only.php';
+
+// config.php already calls session_start() with a working save path.
+// Do not call session_start() again here, and do not call it before
+// config.php - PHP's CLI server uses a different php.ini than XAMPP's
+// Apache, and its default session path isn't writable by your user.
 
 // ✅ Generate CSRF token if not exists
 if (empty($_SESSION['csrf_token'])) {
@@ -23,9 +27,9 @@ if ($role_result) {
 // ✅ Handle form submission securely
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF token check
-    if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+    if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
         $_SESSION['message'] = "Invalid CSRF token!";
-        header("Location: add_user.php");
+        header("Location: /add_user.php");
         exit();
     }
 
@@ -42,21 +46,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ✅ Basic Validation
     if (empty($username) || empty($first_name) || empty($last_name)) {
         $_SESSION['message'] = "All fields are required.";
-        header("Location: add_user.php");
+        header("Location: /add_user.php");
         exit();
     }
 
     // ✅ Password match check
     if ($password !== $confirm_password) {
         $_SESSION['message'] = "Passwords do not match!";
-        header("Location: add_user.php");
+        header("Location: /add_user.php");
         exit();
     }
 
     // ✅ Password strength check
     if (!preg_match("/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*]{8,}$/", $password)) {
         $_SESSION['message'] = "Password must be at least 8 characters long and include at least one number.";
-        header("Location: add_user.php");
+        header("Location: /add_user.php");
         exit();
     }
 
@@ -68,14 +72,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $check_stmt->bind_param("s", $username);
     $check_stmt->execute();
     $check_stmt->store_result(); // Store result to check num_rows
-    
+
     if ($check_stmt->num_rows > 0) {
         $check_stmt->close(); // Close immediately
         $_SESSION['message'] = "Error: Username already exists!";
-        header("Location: add_user.php");
+        header("Location: /add_user.php");
         exit();
-    } 
-    
+    }
+
     // Close the check statement strictly before starting the next one
     $check_stmt->close();
 
@@ -85,9 +89,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $sql = "INSERT INTO adminusers (username, password_hash, role_id, status_id, created_at, first_name, last_name)
             VALUES (?, ?, ?, ?, ?, ?, ?)";
-    
+
     $stmt = $conn->prepare($sql);
-    
+
     if ($stmt) {
         // Bind parameters using the new variable
         $stmt->bind_param("ssissss", $insert_username, $password_hash, $role_id, $status_id, $created_at, $first_name, $last_name);
@@ -98,28 +102,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $log_stmt = $conn->prepare($log_sql);
             if ($log_stmt) {
                 $action = "Added a new user: " . $insert_username;
-                $log_stmt->bind_param("isis", $_SESSION['admin_id'], $_SESSION['username'], $_SESSION['role_id'], $action);
+                // $_SESSION['username'] isn't set anywhere at login yet, so fall
+                // back to a safe default rather than passing an undefined key
+                // (which throws a warning and inserts NULL/empty into the log).
+                $actingUsername = $_SESSION['username'] ?? ('admin_id_' . $_SESSION['admin_id']);
+                $log_stmt->bind_param("isis", $_SESSION['admin_id'], $actingUsername, $_SESSION['role_id'], $action);
                 $log_stmt->execute();
                 $log_stmt->close();
             }
 
             $_SESSION['success'] = "User added successfully!";
-            header("Location: manage_users.php");
+            header("Location: /manage_users.php");
             exit();
         } else {
             error_log("DB Error: " . $stmt->error);
             $_SESSION['message'] = "Database error: " . $stmt->error;
-            header("Location: add_user.php");
+            header("Location: /add_user.php");
             exit();
         }
         $stmt->close();
     } else {
         $_SESSION['message'] = "Failed to prepare database statement.";
-        header("Location: add_user.php");
+        header("Location: /add_user.php");
         exit();
     }
-    
-    $conn->close();
+
+    // NOTE: don't $conn->close() here if other includes on this page
+    // (or ones loaded via the router) might still need $conn afterward.
 }
 ?><!DOCTYPE html>
 <html lang="en">
@@ -194,7 +203,7 @@ function validatePassword() {
     <?php endif; ?>
 
     <!-- Form -->
-    <form action="add_user.php" method="POST" class="space-y-5">
+    <form action="/add_user.php" method="POST" class="space-y-5">
       <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? ''; ?>">
 
 
@@ -258,7 +267,7 @@ function validatePassword() {
           class="flex-1 bg-[var(--rose)] text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-[var(--rose-hover)] active:scale-95 transition-all">
           <i class="fas fa-user-plus mr-2"></i> Add User
         </button>
-        <a href="manage_users.php"
+        <a href="/manage_users.php"
           class="flex-1 bg-gray-100 text-gray-700 text-center px-6 py-3 rounded-lg font-medium hover:bg-gray-200 shadow-sm active:scale-95 transition-all">
           Cancel
         </a>

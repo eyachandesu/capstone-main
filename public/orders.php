@@ -3,9 +3,6 @@ session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../config/config.php';
 
-// ✅ CONFIG: Fix SQL Modes & Limits
-$conn->query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
-$conn->query("SET SESSION group_concat_max_len = 100000");
 
 // 🔐 Ensure logged-in admin
 if (!isset($_SESSION['admin_id'])) {

@@ -1,7 +1,8 @@
 <?php
-session_start();
-//require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../controllers/admin_only.php';
+// config.php already calls session_start() with a working save path -
+// don't call session_start() directly here.
 
 // 1. Initialize Admin Session Data
 $admin_id      = $_SESSION['admin_id'] ?? null;

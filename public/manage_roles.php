@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../init.php';
 
 
