@@ -1,228 +1,261 @@
 <?php
-session_start();
+require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../controllers/admin_only.php';
-require_once __DIR__ . '/../init.php';
 
+// Logged-in Admin Information
+$admin_id = $_SESSION['admin_id'];
+$admin_role_id = $_SESSION['role_id'];
 
-$user = checkAuth('admin');
-$adminId = $user->user_id ?? '';
-$adminRole = $user->role ?? 'admin';
-
-
-/* 🔐 Ensure logged-in admin
-if (!isset($_SESSION['admin_id'])) {
-  header("Location: login.php");
-  exit;
-}
-
-$admin_id = $_SESSION['admin_id'];*/
-
-// 🧩 Fetch current admin details
+// Fetch Admin Name and Role
 $stmt = $conn->prepare("
-    SELECT CONCAT(a.first_name, ' ', a.last_name) AS full_name, r.role_name 
-    FROM adminusers a 
+    SELECT
+        CONCAT(a.first_name, ' ', a.last_name) AS full_name,
+        a.role_id,
+        r.role_name
+    FROM adminusers a
     LEFT JOIN roles r ON a.role_id = r.role_id
     WHERE a.admin_id = ?
 ");
+
 $stmt->bind_param("i", $admin_id);
 $stmt->execute();
 $admin = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
-$admin_name = $admin['full_name'] ?? "Admin";
-$admin_role = $admin['role_name'] ?? "Administrator";
+$admin_name = $admin['full_name'] ?? 'Admin';
+$admin_role = $admin['role_name'] ?? 'Administrator';
 
-// ➕ Add Role
+
+// ===============================
+// ADD ROLE
+// ===============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_role'])) {
-  $role_name = trim($_POST['role_name']);
-  if (!empty($role_name)) {
-    // Check if role name already exists
-    $check_stmt = $conn->prepare("SELECT role_id FROM roles WHERE role_name = ?");
-    $check_stmt->bind_param("s", $role_name);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    if ($check_result->num_rows > 0) {
-      $_SESSION['message'] = "Role name already exists!";
-      $check_stmt->close();
+
+    $role_name = trim($_POST['role_name']);
+
+    if ($role_name === '') {
+        $_SESSION['message'] = "Role name is required.";
     } else {
-      $check_stmt->close();
-      $stmt = $conn->prepare("INSERT INTO roles (role_name) VALUES (?)");
-      $stmt->bind_param("s", $role_name);
-      $stmt->execute();
-      $_SESSION['success'] = "Role added successfully!";
-      $stmt->close();
+
+        $check = $conn->prepare("SELECT role_id FROM roles WHERE role_name = ?");
+        $check->bind_param("s", $role_name);
+        $check->execute();
+        $check->store_result();
+
+        if ($check->num_rows > 0) {
+
+            $_SESSION['message'] = "Role already exists.";
+
+        } else {
+
+            $stmt = $conn->prepare("INSERT INTO roles (role_name) VALUES (?)");
+            $stmt->bind_param("s", $role_name);
+
+            if ($stmt->execute()) {
+                $_SESSION['success'] = "Role added successfully.";
+            } else {
+                $_SESSION['message'] = "Failed to add role.";
+            }
+
+            $stmt->close();
+        }
+
+        $check->close();
     }
-  } else {
-    $_SESSION['message'] = "Role name cannot be empty!";
-  }
-  header("Location: manage_roles.php");
-  exit();
+
+    header("Location: manage_roles.php");
+    exit();
 }
 
-// ✏️ Edit Role
+
+// ===============================
+// EDIT ROLE
+// ===============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_role'])) {
-  $role_id = intval($_POST['role_id']);
-  $role_name = trim($_POST['role_name']);
 
-  if ($role_id == 2) {
-    $_SESSION['message'] = "Admin role cannot be renamed!";
-  } else {
-    $stmt = $conn->prepare("UPDATE roles SET role_name = ? WHERE role_id = ?");
-    $stmt->bind_param("si", $role_name, $role_id);
-    $stmt->execute();
-    $_SESSION['success'] = "Role updated successfully!";
-    $stmt->close();
-  }
-  header("Location: manage_roles.php");
-  exit();
-}
+    $role_id = (int)$_POST['role_id'];
+    $role_name = trim($_POST['role_name']);
 
-// 🗑️ Delete Role
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_role'])) {
-  $role_id = intval($_POST['role_id']);
+    if ($role_name === '') {
 
-  // Only allow Admins to delete, and not their own role
-  $current_admin_id = $_SESSION['admin_id'];
-  $admin_check = $conn->prepare("SELECT role_id FROM adminusers WHERE admin_id = ?");
-  $admin_check->bind_param("i", $current_admin_id);
-  $admin_check->execute();
-  $admin_check->bind_result($current_role_id);
-  $admin_check->fetch();
-  $admin_check->close();
+        $_SESSION['message'] = "Role name is required.";
 
-  if ($current_role_id != 2) {
-    $_SESSION['message'] = "Only Admin users can delete roles!";
-  } elseif ($role_id == $current_role_id) {
-    $_SESSION['message'] = "You cannot delete your own role while logged in!";
-  } else {
-    $check = $conn->prepare("SELECT COUNT(*) FROM adminusers WHERE role_id = ?");
-    $check->bind_param("i", $role_id);
-    $check->execute();
-    $check->bind_result($count);
-    $check->fetch();
-    $check->close();
-
-    if ($count > 0) {
-      $_SESSION['message'] = "Cannot delete role assigned to users!";
     } else {
-      $stmt = $conn->prepare("DELETE FROM roles WHERE role_id = ?");
-      $stmt->bind_param("i", $role_id);
-      $stmt->execute();
-      $_SESSION['success'] = "Role deleted successfully!";
-      $stmt->close();
+
+        // Prevent duplicate role names
+        $check = $conn->prepare("
+            SELECT role_id
+            FROM roles
+            WHERE role_name = ?
+            AND role_id != ?
+        ");
+
+        $check->bind_param("si", $role_name, $role_id);
+        $check->execute();
+        $check->store_result();
+
+        if ($check->num_rows > 0) {
+
+            $_SESSION['message'] = "Role name already exists.";
+
+        } elseif ($role_id == 2) {
+
+            $_SESSION['message'] = "Administrator role cannot be renamed.";
+
+        } else {
+
+            $stmt = $conn->prepare("
+                UPDATE roles
+                SET role_name=?
+                WHERE role_id=?
+            ");
+
+            $stmt->bind_param("si", $role_name, $role_id);
+
+            if ($stmt->execute()) {
+                $_SESSION['success'] = "Role updated successfully.";
+            } else {
+                $_SESSION['message'] = "Failed to update role.";
+            }
+
+            $stmt->close();
+        }
+
+        $check->close();
     }
-  }
-  header("Location: manage_roles.php");
-  exit();
+
+    header("Location: manage_roles.php");
+    exit();
 }
 
-// 🔎 Search Logic
-$search = $_GET['search'] ?? '';
-$search_query = "";
-if (!empty($search)) {
-  $s = $conn->real_escape_string($search);
-  $search_query = " WHERE role_name LIKE '%$s%' ";
+
+// ===============================
+// DELETE ROLE
+// ===============================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_role'])) {
+
+    $role_id = (int)$_POST['role_id'];
+
+    if ($role_id == 2) {
+
+        $_SESSION['message'] = "Administrator role cannot be deleted.";
+
+    } else {
+
+        $check = $conn->prepare("
+            SELECT COUNT(*)
+            FROM adminusers
+            WHERE role_id = ?
+        ");
+
+        $check->bind_param("i", $role_id);
+        $check->execute();
+        $check->bind_result($count);
+        $check->fetch();
+        $check->close();
+
+        if ($count > 0) {
+
+            $_SESSION['message'] = "Cannot delete a role that is assigned to users.";
+
+        } else {
+
+            $stmt = $conn->prepare("
+                DELETE FROM roles
+                WHERE role_id = ?
+            ");
+
+            $stmt->bind_param("i", $role_id);
+
+            if ($stmt->execute()) {
+                $_SESSION['success'] = "Role deleted successfully.";
+            } else {
+                $_SESSION['message'] = "Failed to delete role.";
+            }
+
+            $stmt->close();
+        }
+    }
+
+    header("Location: manage_roles.php");
+    exit();
 }
 
-// 📌 Fetch Roles
-$roles = $conn->query("SELECT * FROM roles $search_query ORDER BY role_id ASC");
 
-// Notifications (Mock logic for consistency)
-$newOrdersNotif = 0;
-$lowStockNotif = 0;
-$totalNotif = 0;
+// ===============================
+// SEARCH
+// ===============================
+
+$search = trim($_GET['search'] ?? '');
+
+if ($search !== '') {
+
+    $like = "%{$search}%";
+
+    $stmt = $conn->prepare("
+        SELECT *
+        FROM roles
+        WHERE role_name LIKE ?
+        ORDER BY role_id ASC
+    ");
+
+    $stmt->bind_param("s", $like);
+    $stmt->execute();
+    $roles = $stmt->get_result();
+
+} else {
+
+    $roles = $conn->query("
+        SELECT *
+        FROM roles
+        ORDER BY role_id ASC
+    ");
+}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage Roles | Seven Dwarfs</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Roles | Seven Dwarfs Boutique</title>
 
-  <!-- Libraries -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
-  <!-- NProgress (Loading Bar) -->
-  <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css" />
-
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --rose: #e59ca8;
-      --rose-hover: #d27b8c;
-    }
-
-    body {
-      font-family: 'Poppins', sans-serif;
-      background-color: #f9fafb;
-      color: #374151;
-    }
-
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--rose);
-      border-radius: 3px;
-    }
-
-    /* Sidebar specific */
-    .active {
-      background-color: #fce8eb;
-      color: var(--rose);
-      font-weight: 600;
-      border-radius: 0.5rem;
-    }
-
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    /* 1. View Transitions API */
-    @view-transition {
-      navigation: auto;
-    }
-
-    /* 2. Fade In Animation */
-    @keyframes fadeInSlide {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-fade-in {
-      animation: fadeInSlide 0.4s ease-out;
-    }
-
-    /* 3. NProgress Customization */
-    #nprogress .bar {
-      background: var(--rose) !important;
-      height: 3px !important;
-    }
-
-    #nprogress .peg {
-      box-shadow: 0 0 10px var(--rose), 0 0 5px var(--rose) !important;
-    }
-  </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#fff1f3',
+                            100: '#ffe4e8',
+                            200: '#fecdd6',
+                            300: '#fda4b4',
+                            400: '#e59ca8',
+                            500: '#d27b8c',
+                            600: '#be5f7a',
+                            700: '#a54b64',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+:root{
+    --rose:#e59ca8;
+    --rose-hover:#d27b8c;
+}
+</style>
 </head>
 
 <body class="text-sm animate-fade-in">

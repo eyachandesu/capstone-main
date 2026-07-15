@@ -340,51 +340,134 @@ $newOrdersNotif = 0; $lowStockNotif = 0; $totalNotif = 0;
   </main>
 
   <!-- Add Modal -->
-  <div x-show="showAddModal" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in">
-    <div @click.away="showAddModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-      <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Add Category</h2>
-      <form action="add_category.php" method="POST">
-        <label class="block text-gray-700 text-sm font-bold mb-2">Category Name</label>
-        <input type="text" name="category_name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[var(--rose)] focus:border-transparent">
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="showAddModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-[var(--rose)] text-white rounded-lg hover:bg-[var(--rose-hover)] transition font-medium">Save</button>
-        </div>
-      </form>
-    </div>
-  </div>
+<div x-show="showAddModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
 
-  <!-- Edit Modal -->
-  <div x-show="showEditModal" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in">
-    <div @click.away="showEditModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-      <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Edit Category</h2>
-      <form action="edit_category.php" method="POST">
-        <input type="hidden" name="category_id" :value="selectedCategory.id">
-        <label class="block text-gray-700 text-sm font-bold mb-2">Category Name</label>
-        <input type="text" name="category_name" x-model="selectedCategory.name" required class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-6 focus:outline-none focus:ring-2 focus:ring-[var(--rose)] focus:border-transparent">
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="showEditModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-[var(--rose)] text-white rounded-lg hover:bg-[var(--rose-hover)] transition font-medium">Update</button>
-        </div>
-      </form>
-    </div>
-  </div>
+    <div @click.away="showAddModal = false"
+        class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
 
-  <!-- Delete Modal -->
-  <div x-show="showDeleteModal" x-cloak class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in">
-    <div @click.away="showDeleteModal = false" class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 transform transition-all">
-      <h2 class="text-xl font-bold text-gray-800 mb-2">Delete Category</h2>
-      <p class="text-sm text-gray-600 mb-6">Are you sure you want to delete <strong x-text="selectedCategory.name"></strong>? This action cannot be undone.</p>
-      <form action="delete_category.php" method="POST">
-        <input type="hidden" name="category_id" :value="selectedCategory.id">
-        <div class="flex justify-end gap-3">
-          <button type="button" @click="showDeleteModal = false" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium">Delete</button>
-        </div>
-      </form>
-    </div>
-  </div>
+        <h2 class="mb-6 border-b pb-3 text-xl font-semibold text-gray-800">
+            Add Category
+        </h2>
 
+        <form action="../controllers/add_category.php" method="POST">
+
+            <div class="mb-5">
+                <label class="mb-2 block text-sm font-medium text-gray-700">
+                    Category Name
+                </label>
+
+                <input
+                    type="text"
+                    name="category_name"
+                    required
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200">
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button
+                    type="button"
+                    @click="showAddModal = false"
+                    class="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200">
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="rounded-lg bg-rose-400 px-4 py-2 font-medium text-white transition hover:bg-rose-500">
+                    Save
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div x-show="showEditModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+
+    <div @click.away="showEditModal = false"
+        class="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+
+        <h2 class="mb-6 border-b pb-3 text-xl font-semibold text-gray-800">
+            Edit Category
+        </h2>
+
+        <form action="../controllers/edit_category.php" method="POST">
+
+            <input type="hidden" name="category_id" :value="selectedCategory.id">
+
+            <div class="mb-5">
+                <label class="mb-2 block text-sm font-medium text-gray-700">
+                    Category Name
+                </label>
+
+                <input
+                    type="text"
+                    name="category_name"
+                    x-model="selectedCategory.name"
+                    required
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200">
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button
+                    type="button"
+                    @click="showEditModal = false"
+                    class="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200">
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="rounded-lg bg-rose-400 px-4 py-2 font-medium text-white transition hover:bg-rose-500">
+                    Update
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div x-show="showDeleteModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+
+    <div @click.away="showDeleteModal = false"
+        class="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+
+        <h2 class="mb-3 text-xl font-semibold text-gray-800">
+            Delete Category
+        </h2>
+
+        <p class="mb-6 text-sm text-gray-600">
+            Are you sure you want to delete
+            <strong x-text="selectedCategory.name"></strong>?
+            This action cannot be undone.
+        </p>
+
+        <form action="../controllers/delete_category.php" method="POST">
+
+            <input type="hidden" name="category_id" :value="selectedCategory.id">
+
+            <div class="flex justify-end gap-3">
+                <button
+                    type="button"
+                    @click="showDeleteModal = false"
+                    class="rounded-lg bg-gray-100 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-200">
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="rounded-lg bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-600">
+                    Delete
+                </button>
+            </div>
+
+        </form>
+    </div>
 </div>
 
 <!-- Scripts -->

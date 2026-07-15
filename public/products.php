@@ -468,28 +468,52 @@ $conn->close();
                         </div>
                       </td>
 
-                      <!-- Product Info -->
-                      <td class="px-6 py-4">
-                        <p class="font-bold text-gray-800"><?= htmlspecialchars($product['product_name']); ?></p>
-                        <p class="text-xs text-gray-500 truncate w-48 mt-1">
-                          <?= htmlspecialchars($product['description']); ?></p>
-                        <div class="text-xs text-gray-400 mt-1 flex flex-col gap-0.5">
-                          <span>Colors: <?= $product['colors'] ?: 'None'; ?></span>
-                          <span>Sizes: <?= $product['sizes'] ?: 'None'; ?></span>
-                        </div>
-                      </td>
+                     <!-- Product Info -->
+<td class="px-6 py-4">
+    <p class="font-bold text-gray-800">
+        <?= htmlspecialchars($product['product_name'] ?? '') ?>
+    </p>
 
-                      <!-- Selling Price -->
-                      <td class="px-6 py-4 font-bold text-[var(--rose)]">
-                        ₱<?= number_format($product['price_id'], 2); ?>
-                      </td>
+    <p class="text-xs text-gray-500 truncate w-48 mt-1">
+        <?= !empty($product['description'])
+            ? htmlspecialchars($product['description'])
+            : 'No description'; ?>
+    </p>
 
-                      <!-- Category -->
-                      <td class="px-6 py-4">
-                        <span class="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-medium">
-                                      <?= htmlspecialchars($product['category_name']); ?>
-                        </span>
-                      </td>
+    <div class="text-xs text-gray-400 mt-1 flex flex-col gap-0.5">
+        <span>
+            Colors:
+            <?= !empty($product['colors'])
+                ? htmlspecialchars($product['colors'])
+                : 'None'; ?>
+        </span>
+
+        <span>
+            Sizes:
+            <?= !empty($product['sizes'])
+                ? htmlspecialchars($product['sizes'])
+                : 'None'; ?>
+        </span>
+    </div>
+</td>
+
+<!-- Selling Price -->
+<td class="px-6 py-4 font-bold text-rose-500">
+    <?php if (!empty($product['price_id'])): ?>
+        ₱<?= number_format((float)$product['price_id'], 2); ?>
+    <?php else: ?>
+        <span class="text-gray-400 font-normal italic">
+            No price yet
+        </span>
+    <?php endif; ?>
+</td>
+
+<!-- Category -->
+<td class="px-6 py-4">
+    <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+        <?= htmlspecialchars($product['category_name'] ?? 'Uncategorized') ?>
+    </span>
+</td>
 
                       <!-- Actions -->
                       <td class="px-6 py-4">

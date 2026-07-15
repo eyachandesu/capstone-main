@@ -1342,6 +1342,9 @@
   .bg-rose-100 {
     background-color: var(--color-rose-100);
   }
+  .bg-rose-400 {
+    background-color: var(--color-rose-400);
+  }
   .bg-rose-500 {
     background-color: var(--color-rose-500);
   }
@@ -1650,6 +1653,9 @@
   }
   .pb-2 {
     padding-bottom: calc(var(--spacing) * 2);
+  }
+  .pb-3 {
+    padding-bottom: calc(var(--spacing) * 3);
   }
   .pb-4 {
     padding-bottom: calc(var(--spacing) * 4);
@@ -2548,6 +2554,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-rose-100);
+      }
+    }
+  }
+  .hover\:bg-rose-500 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-rose-500);
       }
     }
   }

@@ -1,1 +1,1 @@
-csrf_token|s:64:"8f4f3365d63252fd80df800604780193a31ce9242ecbce1810d087cf4159736c";user_id|i:5;role|s:5:"admin";admin_id|i:5;role_id|i:2;
+csrf_token|s:64:"8f4f3365d63252fd80df800604780193a31ce9242ecbce1810d087cf4159736c";user_id|i:5;role|s:5:"admin";admin_id|i:5;role_id|i:2;success|s:27:"Product added successfully!";message|s:24:"Category already exists.";
