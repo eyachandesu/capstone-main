@@ -1,84 +1,223 @@
 <?php
-// process_edit_stock.php
-session_start();
-require_once __DIR__ . '/../config/conn.php';
 
-// Check if Admin is logged in
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+session_start();
+
+require_once __DIR__ . '/../config/config.php';
+
+/* -----------------------------
+   Check Login
+------------------------------ */
+
 if (!isset($_SESSION['admin_id'])) {
-    header("Location: /public/login.php");
-    exit;
+    header("Location: /login.php");
+    exit();
 }
 
-// Validate POST request
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get values from the form
-    $stock_id       = intval($_POST['stock_id']);
-    $product_id     = intval($_POST['product_id']); // Essential for updating prices
-    $supplier_id    = !empty($_POST['supplier_id']) ? intval($_POST['supplier_id']) : NULL;
-    $color_id       = !empty($_POST['color_id']) ? intval($_POST['color_id']) : NULL;
-    $size_id        = !empty($_POST['size_id']) ? intval($_POST['size_id']) : NULL;
-    $new_quantity   = intval($_POST['new_quantity']);
-    
-    // Get the new prices
-    $supplier_price = isset($_POST['supplier_price']) ? floatval($_POST['supplier_price']) : 0.00;
-    $seller_price   = isset($_POST['price']) ? floatval($_POST['price']) : 0.00;
+/* -----------------------------
+   Request Validation
+------------------------------ */
 
-    // Start Transaction to ensure both tables update, or neither
-    $conn->begin_transaction();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: /stock_management.php");
+    exit();
+}
 
-    try {
-        // Update the STOCK table (Quantity, Color, Size)
-        $stock_sql = "UPDATE stock 
-                      SET current_qty = ?, 
-                          color_id = ?, 
-                          size_id = ?, 
-                          product_id = ? 
-                      WHERE stock_id = ?";
-        
-        $stmt = $conn->prepare($stock_sql);
-        $stmt->bind_param("iiiii", $new_quantity, $color_id, $size_id, $product_id, $stock_id);
-        
-        if (!$stmt->execute()) {
-            throw new Exception("Error updating stock: " . $stmt->error);
-        }
-        $stmt->close();
+/* -----------------------------
+   Get Form Values
+------------------------------ */
 
-        // Update the PRODUCTS table (Supplier Price, Seller Price)
-        $product_sql = "UPDATE products 
-                        SET supplier_price = ?, 
-                            price_id = ?, 
-                            supplier_id = ? 
-                        WHERE product_id = ?";
-        
-        $stmt2 = $conn->prepare($product_sql);
-        $stmt2->bind_param("ddii", $supplier_price, $seller_price, $supplier_id, $product_id);
-        
-        if (!$stmt2->execute()) {
-            throw new Exception("Error updating product prices: " . $stmt2->error);
-        }
-        $stmt2->close();
+$stock_id = intval($_POST['stock_id'] ?? 0);
+$product_id = intval($_POST['product_id'] ?? 0);
 
-        // Log the Action
-        $admin_id = $_SESSION['admin_id'];
-        $log_action = "Updated Stock ID: $stock_id and Prices for Product ID: $product_id";
-        $log_sql = "INSERT INTO system_logs (user_id, action) VALUES (?, ?)";
-        $stmt_log = $conn->prepare($log_sql);
-        $stmt_log->bind_param("is", $admin_id, $log_action);
-        $stmt_log->execute();
-        $stmt_log->close();
+$current_qty = intval($_POST['new_quantity'] ?? 0);
 
-        $conn->commit();
-        header("Location: /public/stock_management.php?status=success&msg=Stock and Prices Updated");
-        exit;
+$color_id = !empty($_POST['color_id'])
+    ? intval($_POST['color_id'])
+    : null;
 
-    } catch (Exception $e) {
-        $conn->rollback();
-        header("Location: /public/stock_management.php?status=error&msg=" . urlencode($e->getMessage()));
-        exit;
+$size_id = !empty($_POST['size_id'])
+    ? intval($_POST['size_id'])
+    : null;
+
+$supplier_id = intval($_POST['supplier_id'] ?? 0);
+
+$supplier_price = floatval($_POST['supplier_price'] ?? 0);
+
+$selling_price = floatval($_POST['price'] ?? 0);
+
+/* -----------------------------
+   Validation
+------------------------------ */
+
+if ($stock_id <= 0) {
+    die("Invalid Stock ID.");
+}
+
+if ($product_id <= 0) {
+    die("Invalid Product.");
+}
+
+if ($current_qty < 0) {
+    die("Invalid Quantity.");
+}
+
+/* -----------------------------
+   Start Transaction
+------------------------------ */
+
+$conn->begin_transaction();
+
+try {
+
+    /* -------------------------
+       Check Stock Exists
+    -------------------------- */
+
+    $check = $conn->prepare("
+        SELECT stock_id
+        FROM stock
+        WHERE stock_id = ?
+    ");
+
+    $check->bind_param("i", $stock_id);
+    $check->execute();
+
+    if ($check->get_result()->num_rows == 0) {
+        throw new Exception("Stock record not found.");
     }
 
-} else {
-        header("Location: /public/stock_management.php");
-    exit;
+    $check->close();
+
+    /* -------------------------
+       Update Stock
+    -------------------------- */
+
+    $sql = "
+        UPDATE stock
+        SET
+            current_qty = ?,
+            color_id = ?,
+            size_id = ?,
+            product_id = ?
+        WHERE stock_id = ?
+    ";
+
+    $stmt = $conn->prepare($sql);
+
+    $stmt->bind_param(
+        "iiiii",
+        $current_qty,
+        $color_id,
+        $size_id,
+        $product_id,
+        $stock_id
+    );
+
+    if (!$stmt->execute()) {
+        throw new Exception($stmt->error);
+    }
+
+    $stmt->close();
+
+    /* -------------------------
+       Update Product Prices
+    -------------------------- */
+
+    $sql = "
+        UPDATE products
+        SET
+            supplier_price = ?,
+            price_id = ?,
+            supplier_id = ?
+        WHERE product_id = ?
+    ";
+
+    $stmt = $conn->prepare($sql);
+
+    $stmt->bind_param(
+        "ddii",
+        $supplier_price,
+        $selling_price,
+        $supplier_id,
+        $product_id
+    );
+
+    if (!$stmt->execute()) {
+        throw new Exception($stmt->error);
+    }
+
+    $stmt->close();
+
+    /* -------------------------
+       Recalculate Total Stocks
+    -------------------------- */
+
+    $sum = $conn->prepare("
+        SELECT COALESCE(SUM(current_qty),0) total_qty
+        FROM stock
+        WHERE product_id = ?
+    ");
+
+    $sum->bind_param("i", $product_id);
+    $sum->execute();
+
+    $total = $sum->get_result()->fetch_assoc()['total_qty'];
+
+    $sum->close();
+
+    $update = $conn->prepare("
+        UPDATE products
+        SET stocks = ?
+        WHERE product_id = ?
+    ");
+
+    $update->bind_param(
+        "ii",
+        $total,
+        $product_id
+    );
+
+    $update->execute();
+    $update->close();
+
+    /* -------------------------
+       Log Action
+    -------------------------- */
+
+    $admin_id = $_SESSION['admin_id'];
+    $username = $_SESSION['username'] ?? 'Admin';
+
+    $action = "Edited Stock ID {$stock_id}";
+
+    $log = $conn->prepare("
+        INSERT INTO system_logs
+        (user_id, username, role_id, action)
+        VALUES (?, ?, 2, ?)
+    ");
+
+    if ($log) {
+        $log->bind_param(
+            "iss",
+            $admin_id,
+            $username,
+            $action
+        );
+
+        $log->execute();
+        $log->close();
+    }
+
+    $conn->commit();
+
+    header("Location: /stock_management.php?success=1");
+    exit();
+
+} catch (Exception $e) {
+
+    $conn->rollback();
+
+    die($e->getMessage());
 }
-?>

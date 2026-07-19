@@ -1,6 +1,5 @@
 <?php
-session_start();
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // Check if user is logged in before trying to log database actions
 if (isset($_SESSION["admin_id"])) {
@@ -37,6 +36,6 @@ session_unset();
 session_destroy();
 
 // 5. Redirect
-header("Location: /public/login.php");
+header("Location: /login.php");
 exit;
 ?>

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 session_start();
 
 // Ensure admin is logged in
@@ -106,8 +106,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $logStmt->close();
 
     // 9️⃣ Redirect back
-    header("Location: /public/stock_management.php?success=1");
-    exit;
+    header("Location: /stock_management.php?success=1");
+exit();
 } else {
     die("Invalid request method.");
 }

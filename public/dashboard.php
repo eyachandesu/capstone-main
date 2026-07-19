@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../init.php';
 
 $user = checkAuth();
@@ -405,7 +406,7 @@ $totalNotif = $newOrdersNotif + $lowStockNotif;
           :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i
             class="fas fa-cogs w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Settings</span></a>
 
-        <a href="logout.php"
+        <a href="/controllers/logout.php"
           class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center"
           :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
           <i class="fas fa-sign-out-alt w-5 text-center text-lg"></i>

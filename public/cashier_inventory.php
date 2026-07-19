@@ -158,7 +158,7 @@ $result = $stmt->get_result();
         </nav>
         <div class="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center gap-3 overflow-hidden">
             <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-sm shadow-sm shrink-0"><?= strtoupper(substr($cashier_name,0,1)) ?></div>
-            <div class="sidebar-text overflow-hidden"><p class="text-sm font-bold text-slate-700 truncate"><?= htmlspecialchars($cashier_name) ?></p><form action="logout.php" method="POST"><button class="text-xs text-rose-500 font-medium hover:underline">Sign Out</button></form></div>
+            <div class="sidebar-text overflow-hidden"><p class="text-sm font-bold text-slate-700 truncate"><?= htmlspecialchars($cashier_name) ?></p><form action="/controllers/logout.php" method="POST"><button class="text-xs text-rose-500 font-medium hover:underline">Sign Out</button></form></div>
         </div>
     </aside>
 

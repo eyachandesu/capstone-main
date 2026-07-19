@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../config/config.php';
 
@@ -168,7 +167,7 @@ $stmt_breakdown->close();
       <a href="cashier_sales_report.php" class="block px-4 py-3 active-nav flex items-center transition-all duration-300" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-chart-line w-5 text-center text-lg"></i><span x-show="sidebarOpen">Cashier Sales</span></a>
       <a href="system_logs.php" class="block px-4 py-3 hover:bg-gray-100 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-file-alt w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Logs</span></a>
     <a href="settings.php" class="block px-4 py-3 hover:bg-gray-100 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-cogs w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Settings</span></a>
-      <a href="logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-sign-out-alt w-5 text-center text-lg"></i><span x-show="sidebarOpen">Logout</span></a>
+      <a href="/controllers/logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-sign-out-alt w-5 text-center text-lg"></i><span x-show="sidebarOpen">Logout</span></a>
     </nav>
   </aside>
 

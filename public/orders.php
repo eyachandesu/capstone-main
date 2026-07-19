@@ -74,64 +74,120 @@ switch ($date_filter) {
 
 // 🔹 MAIN QUERY
 $sql = "
-    SELECT 
+SELECT
     o.order_id,
-    
-    -- 🟢 Use Transaction ID if available, otherwise fallback to Order ID
-    COALESCE(o.transaction_id, CONCAT('ORD-', o.order_id)) AS transaction_display_id, 
-    
+
+    CONCAT('ORD-', o.order_id) AS transaction_display_id,
+
     o.total_amount,
     os.order_status_name AS order_status,
     pm.payment_method_name AS payment_method,
     o.created_at,
-    
-    -- 1. List Purchased Items
+
     GROUP_CONCAT(
         DISTINCT CONCAT(
-            '<div class=\"mb-1\">• <b>', p.product_name, '</b> <span class=\"text-gray-500 text-[10px]\">(', 
-            COALESCE(sz.size, 'Free'), ', ', COALESCE(c2.color, 'Std'), 
-            ')</span> <span class=\"bg-blue-50 text-blue-700 px-1 rounded font-bold ml-1\">x', oi.qty, '</span></div>'
-        ) ORDER BY oi.id SEPARATOR ''
+            '<div class=\"mb-1\">• <b>',
+            p.product_name,
+            '</b> <span class=\"text-gray-500 text-[10px]\">(',
+            COALESCE(sz.size,'Free'),
+            ', ',
+            COALESCE(c2.color,'Std'),
+            ')</span> <span class=\"bg-blue-50 text-blue-700 px-1 rounded font-bold ml-1\">x',
+            oi.qty,
+            '</span></div>'
+        )
+        ORDER BY oi.id
+        SEPARATOR ''
     ) AS purchased_items,
 
-    -- 2. List Returned/Refunded Items (From Stock Adjustments)
     (
         SELECT GROUP_CONCAT(
             CONCAT(
                 '<div class=\"text-xs mt-1 border-t pt-1 ',
-                IF(sa.type = 'return_restock', 'text-green-600 border-green-100', 'text-red-600 border-red-100'),
+                IF(sa.type='return_restock',
+                    'text-green-600 border-green-100',
+                    'text-red-600 border-red-100'
+                ),
                 '\">',
-                IF(sa.type = 'return_restock', '<i class=\"fas fa-sync\"></i> <b>Restocked (Wrong Item):</b> ', '<i class=\"fas fa-trash\"></i> <b>Refunded (Damaged):</b> '),
-                p2.product_name, ' (', COALESCE(sz2.size, '-'), ', ', COALESCE(c3.color, '-'), ') ',
+                IF(sa.type='return_restock',
+                    '<i class=\"fas fa-sync\"></i> <b>Restocked (Wrong Item):</b> ',
+                    '<i class=\"fas fa-trash\"></i> <b>Refunded (Damaged):</b> '
+                ),
+                p2.product_name,
+                ' (',
+                COALESCE(sz2.size,'-'),
+                ', ',
+                COALESCE(c3.color,'-'),
+                ') ',
                 '<span class=\"px-1 rounded font-bold ',
-                IF(sa.type = 'return_restock', 'bg-green-100 text-green-800', 'bg-red-100 text-red-800'),
-                '\">x', sa.quantity, '</span>',
-                IF(sa.type = 'damaged', 
-                   CONCAT(' — ₱', FORMAT(sa.quantity * (SELECT price FROM order_items WHERE order_id = o.order_id AND stock_id = sa.stock_id LIMIT 1), 2)),
-                   ''
+                IF(sa.type='return_restock',
+                    'bg-green-100 text-green-800',
+                    'bg-red-100 text-red-800'
+                ),
+                '\">x',
+                sa.quantity,
+                '</span>',
+                IF(
+                    sa.type='damaged',
+                    CONCAT(
+                        ' — ₱',
+                        FORMAT(
+                            sa.quantity *
+                            (
+                                SELECT price
+                                FROM order_items
+                                WHERE order_id=o.order_id
+                                AND stock_id=sa.stock_id
+                                LIMIT 1
+                            ),
+                            2
+                        )
+                    ),
+                    ''
                 ),
                 '</div>'
             )
             SEPARATOR ''
         )
         FROM stock_adjustments sa
-        LEFT JOIN stock s2 ON sa.stock_id = s2.stock_id
-        LEFT JOIN products p2 ON s2.product_id = p2.product_id
-        LEFT JOIN sizes sz2 ON s2.size_id = sz2.size_id
-        LEFT JOIN colors c3 ON s2.color_id = c3.color_id
-        WHERE sa.reason LIKE CONCAT('Order #', o.order_id, '%')
+        LEFT JOIN stock s2
+            ON sa.stock_id=s2.stock_id
+        LEFT JOIN products p2
+            ON s2.product_id=p2.product_id
+        LEFT JOIN sizes sz2
+            ON s2.size_id=sz2.size_id
+        LEFT JOIN colors c3
+            ON s2.color_id=c3.color_id
+        WHERE sa.reason LIKE CONCAT('Order #',o.order_id,'%')
     ) AS return_history
 
 FROM orders o
-LEFT JOIN order_status os ON o.order_status_id = os.order_status_id
-LEFT JOIN payment_methods pm ON o.payment_method_id = pm.payment_method_id
-LEFT JOIN order_items oi ON o.order_id = oi.order_id
-LEFT JOIN stock s ON oi.stock_id = s.stock_id
-LEFT JOIN products p ON s.product_id = p.product_id
-LEFT JOIN sizes sz ON s.size_id = sz.size_id
-LEFT JOIN colors c2 ON s.color_id = c2.color_id
+
+LEFT JOIN order_status os
+    ON o.order_status_id=os.order_status_id
+
+LEFT JOIN payment_methods pm
+    ON o.payment_method_id=pm.payment_method_id
+
+LEFT JOIN order_items oi
+    ON o.order_id=oi.order_id
+
+LEFT JOIN stock s
+    ON oi.stock_id=s.stock_id
+
+LEFT JOIN products p
+    ON s.product_id=p.product_id
+
+LEFT JOIN sizes sz
+    ON s.size_id=sz.size_id
+
+LEFT JOIN colors c2
+    ON s.color_id=c2.color_id
+
 WHERE " . implode(" AND ", $where) . "
+
 GROUP BY o.order_id
+
 ORDER BY o.created_at DESC
 ";
 
@@ -298,7 +354,7 @@ foreach ($orders as $order) {
       </a>
       <a href="settings.php" class="block px-4 py-3 hover:bg-gray-100 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-cogs w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Settings</span></a>
 
-      <a href="logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
+      <a href="/controllers/logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
         <i class="fas fa-sign-out-alt w-5 text-center text-lg"></i>
         <span x-show="sidebarOpen" class="whitespace-nowrap">Logout</span>
       </a>

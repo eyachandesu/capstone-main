@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/../controllers/admin_only.php';
 require_once __DIR__ . '/../config/config.php';
 
@@ -79,7 +78,6 @@ if (count($whereClauses) > 0) {
 }
 
 // 🔹 Stock Query
-// Note: MAX(si.date_added) retrieves the most recent stock-in date
 $stockQuery = "
     SELECT 
         s.stock_id,
@@ -282,130 +280,186 @@ if ($stmt = $conn->prepare($stockQuery)) {
       </a>
       <a href="settings.php" class="block px-4 py-3 hover:bg-gray-100 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'"><i class="fas fa-cogs w-5 text-center text-lg"></i><span x-show="sidebarOpen">System Settings</span></a>
 
-      <a href="logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
+      <a href="/controllers/logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-all duration-300 flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
         <i class="fas fa-sign-out-alt w-5 text-center text-lg"></i>
         <span x-show="sidebarOpen" class="whitespace-nowrap">Logout</span>
       </a>
     </nav>
   </aside>
 
+  <!-- ================= MAIN CONTENT ================= -->
+<main
+    class="flex-1 flex flex-col pt-20 bg-gray-50 transition-all duration-300"
+    :class="sidebarOpen ? 'ml-64' : 'ml-20'">
 
-  <!-- Main Content -->
-  <main class="flex-1 flex flex-col pt-20 bg-gray-50 transition-all duration-300 ease-in-out" 
-        :class="sidebarOpen ? 'ml-64' : 'ml-20'">
-    
-    <header class="bg-[var(--rose)] text-white p-4 flex justify-between items-center shadow-md rounded-bl-2xl fixed top-0 right-0 z-20 transition-all duration-300"
-            :class="sidebarOpen ? 'left-64' : 'left-20'">
-      <div class="flex items-center gap-4">
-          <button @click="sidebarOpen = !sidebarOpen" class="text-white hover:bg-white/20 p-2 rounded-full transition"><i class="fas fa-bars text-xl"></i></button>
-          <h1 class="text-xl font-semibold">Stock Management</h1>
-      </div>
+    <!-- Header -->
+    <header
+        class="fixed top-0 right-0 z-20 bg-[var(--rose)] text-white shadow-md rounded-bl-2xl transition-all duration-300"
+        :class="sidebarOpen ? 'left-64' : 'left-20'">
+        <div class="flex items-center justify-between px-6 py-4">
+            <div class="flex items-center gap-4">
+                <button
+                    @click="sidebarOpen=!sidebarOpen"
+                    class="hover:bg-white/20 rounded-lg p-2 transition">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <h1 class="text-xl font-semibold">
+                    Stock Management
+                </h1>
+            </div>
+        </div>
     </header>
 
     <section class="p-6 space-y-6">
         <?php if ($outStock && $selected_status != 'in'): ?>
-          <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl shadow-sm flex items-center animate-pulse">
-            <i class="fas fa-exclamation-triangle mr-2"></i><span><strong>Alert:</strong> Some items are out of stock!</span>
-          </div>
+            <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 shadow-sm flex items-center gap-2">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>
+                    <strong>Warning!</strong>
+                    Some products are already out of stock.
+                </span>
+            </div>
         <?php endif; ?>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div class="flex flex-wrap justify-between items-center gap-4 mb-6">
-                <!-- 🟢 FILTERS -->
-                <form method="GET" class="flex flex-wrap items-center gap-2">
-                    <div class="flex items-center gap-2">
-                        <label class="text-gray-700 font-bold text-xs uppercase tracking-wide">Category:</label>
-                        <select name="category_id" onchange="this.form.submit()" class="px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[var(--rose)]">
-                          <option value="0">All Categories</option>
-                          <?php foreach ($categories as $cat): ?>
-                            <option value="<?= $cat['category_id'] ?>" <?= ($cat['category_id']==$selected_category)?'selected':'' ?> ><?= e($cat['category_name']) ?></option>
-                          <?php endforeach; ?>
-                        </select>
-                    </div>
+            <!-- Top Controls -->
+            <div class="flex flex-wrap items-center justify-between gap-4 p-6 border-b">
+                <form method="GET" class="flex flex-wrap gap-3">
+                    <select
+                        name="category_id"
+                        onchange="this.form.submit()"
+                        class="rounded-lg border px-4 py-2">
+                        <option value="0">All Categories</option>
+                        <?php foreach($categories as $cat): ?>
+                            <option
+                                value="<?= $cat['category_id'] ?>"
+                                <?= $selected_category==$cat['category_id']?'selected':'';?>>
+                                <?= e($cat['category_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
 
-                    <div class="flex items-center gap-2">
-                        <label class="text-gray-700 font-bold text-xs uppercase tracking-wide">Status:</label>
-                        <select name="stock_status" onchange="this.form.submit()" class="px-3 py-2 border rounded-lg text-sm bg-gray-50 focus:outline-none focus:ring-1 focus:ring-[var(--rose)]">
-                          <option value="all" <?= $selected_status == 'all' ? 'selected' : '' ?>>All Status</option>
-                          <option value="in" <?= $selected_status == 'in' ? 'selected' : '' ?>>In Stock</option>
-                          <option value="out" <?= $selected_status == 'out' ? 'selected' : '' ?>>Out of Stock</option>
-                        </select>
-                    </div>
+                    <select
+                        name="stock_status"
+                        onchange="this.form.submit()"
+                        class="rounded-lg border px-4 py-2">
+                        <option value="all" <?= $selected_status=="all"?"selected":"";?>>
+                            All Status
+                        </option>
+                        <option value="in" <?= $selected_status=="in"?"selected":"";?>>
+                            In Stock
+                        </option>
+                        <option value="out" <?= $selected_status=="out"?"selected":"";?>>
+                            Out of Stock
+                        </option>
+                    </select>
                 </form>
-
-                <button type="button" @click="stockInOpen = true"
-                  class="bg-[var(--rose)] hover:bg-[var(--rose-hover)] text-white text-sm font-medium rounded-lg px-4 py-2 shadow-sm transition flex items-center gap-2">
-                  <i class="fas fa-plus"></i> Stock In
+                <button
+                    type="button"
+                    @click="stockInOpen=true"
+                    class="bg-[var(--rose)] hover:bg-[var(--rose-hover)] text-white px-5 py-2 rounded-lg shadow">
+                    <i class="fas fa-plus mr-2"></i>
+                    Stock In
                 </button>
             </div>
 
-            <div class="overflow-x-auto rounded-lg border border-gray-100">
-                <table class="min-w-full text-left text-sm text-gray-600">
-                    <thead class="bg-gray-50 text-gray-500 uppercase font-bold text-xs">
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100 text-xs uppercase text-gray-600">
                         <tr>
-                            <th class="px-6 py-3">Product</th>
-                            <th class="px-6 py-3">Color</th>
-                            <th class="px-6 py-3">Size</th>
-                            <th class="px-6 py-3">Qty</th>
-                            <th class="px-6 py-3">Supplier</th>
-                            <!-- 🟢 ADDED COLUMN HEADER -->
-                            <th class="px-6 py-3">Last Added</th>
-                            <th class="px-6 py-3 text-center">Action</th>
+                            <th class="px-6 py-4 text-left">Product</th>
+                            <th class="px-6 py-4 text-left">Color</th>
+                            <th class="px-6 py-4 text-left">Size</th>
+                            <th class="px-6 py-4 text-center">Quantity</th>
+                            <th class="px-6 py-4 text-left">Supplier</th>
+                            <th class="px-6 py-4 text-left">Last Added</th>
+                            <th class="px-6 py-4 text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 text-gray-700">
-                        <?php if (count($stock_rows) > 0): foreach ($stock_rows as $row): ?>
-                          <tr class="hover:bg-gray-50 transition">
-                            <td class="px-6 py-4 font-bold text-gray-800">
+                    <tbody class="divide-y">
+                    <?php if(!empty($stock_rows)): ?>
+                        <?php foreach($stock_rows as $row): ?>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 font-semibold">
                                 <?= e($row['product_name']) ?>
                             </td>
-                            <td class="px-6 py-4"><?= $row['color'] ? e($row['color']) : '<span class="text-gray-400">—</span>' ?></td>
-                            <td class="px-6 py-4"><?= $row['size'] ? e($row['size']) : '<span class="text-gray-400">—</span>' ?></td>
-                            <td class="px-6 py-4 font-bold <?= ((int)$row['current_qty'] == 0) ? 'text-red-600' : 'text-green-600' ?>"><?= (int)$row['current_qty'] ?></td>
-                            <td class="px-6 py-4 text-xs text-gray-500"><?= e($row['supplier_name'] ?? 'N/A') ?></td>
-                            
-                            <!-- 🟢 ADDED DATE DATA -->
-                            <td class="px-6 py-4 text-xs text-gray-500 whitespace-nowrap">
-                                <?php echo $row['date_added'] ? date('M d, Y', strtotime($row['date_added'])) : '<span class="text-gray-300">-</span>'; ?>
+                            <td class="px-6 py-4">
+                                <?= !empty($row['color']) ? e($row['color']) : '<span class="text-gray-400">N/A</span>' ?>
                             </td>
-
+                            <td class="px-6 py-4">
+                                <?= !empty($row['size']) ? e($row['size']) : '<span class="text-gray-400">N/A</span>' ?>
+                            </td>
                             <td class="px-6 py-4 text-center">
-                                <button 
-                                    @click="
-                                        editData.id = '<?= $row['stock_id'] ?>';
-                                        editData.qty = '<?= (int)$row['current_qty'] ?>';
-                                        editData.supplier_id = '<?= $row['supplier_id'] ?? '' ?>';
-                                        editData.product_id = '<?= $row['product_id'] ?? '' ?>';
-                                        editData.color_id = '<?= $row['color_id'] ?? '' ?>';
-                                        editData.size_id = '<?= $row['size_id'] ?? '' ?>';
-                                        
-                                        editData.supplier_price = '<?= $row['supplier_price'] ?? '' ?>';
-                                        editData.price = '<?= $row['seller_price'] ?? '' ?>';
-                                        
-                                        editStockOpen = true; 
-                                        fetchProducts(editData.supplier_id, 'editProductSelect', editData.product_id);
-                                    "
-                                    class="text-[var(--rose)] hover:text-white hover:bg-[var(--rose)] p-2 rounded-lg transition" title="Edit">
-                                    <i class="fas fa-pen"></i>
-                                </button>
+                                <?php if($row['current_qty']>0): ?>
+                                    <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 font-bold">
+                                        <?= (int)$row['current_qty'] ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 font-bold">
+                                        0
+                                    </span>
+                                <?php endif; ?>
                             </td>
-                          </tr>
-                        <?php endforeach; else: ?>
-                          <!-- Updated colspan from 6 to 7 to match new column count -->
-                          <tr><td colspan="7" class="text-center py-8 text-gray-500">No stock records found matching filters.</td></tr>
-                        <?php endif; ?>
+                            <td class="px-6 py-4">
+                                <?= e($row['supplier_name'] ?? 'N/A') ?>
+                            </td>
+                            <td class="px-6 py-4">
+                                <?= !empty($row['date_added'])
+                                    ? date('M d, Y',strtotime($row['date_added']))
+                                    : 'N/A'; ?>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button
+                                  type="button"
+                                  @click="
+                                      editData = {
+                                          id: '<?= $row['stock_id'] ?>',
+                                          product_id: '<?= $row['product_id'] ?>',
+                                          supplier_id: '<?= $row['supplier_id'] ?>',
+                                          qty: '<?= $row['current_qty'] ?>',
+                                          supplier_price: '<?= $row['supplier_price'] ?>',
+                                          price: '<?= $row['seller_price'] ?>',
+                                          color_id: '<?= $row['color_id'] ?>',
+                                          size_id: '<?= $row['size_id'] ?>'
+                                      };
+
+                                      editStockOpen = true;
+
+                                      setTimeout(() => {
+                                          fetchProducts(
+                                              editData.supplier_id,
+                                              'editProductSelect',
+                                              editData.product_id
+                                          );
+                                      }, 100);
+                                  "
+                                  class="rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 p-2">
+                                  <i class="fas fa-edit"></i>
+                              </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="7"
+                                class="py-10 text-center text-gray-500">
+                                No stock records found.
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-        </div> 
+        </div>
     </section>
-  </main>
+</main>
 
    <!-- Stock In Modal -->
-  <div x-show="stockInOpen" x-cloak class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 backdrop-blur-sm animate-fade-in">
+    <div x-show="stockInOpen" x-cloak class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 backdrop-blur-sm animate-fade-in">
     <div @click.away="stockInOpen = false" class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
       <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Stock In (New)</h3>
-      <form action="process_stock_in.php" method="POST" class="space-y-4">
+      <form action="/controllers/process_stock_in.php" method="POST" class="space-y-4">
         
         <!-- 🟢 Product Select -->
         <div>
@@ -485,89 +539,150 @@ if ($stmt = $conn->prepare($stockQuery)) {
   </div>
 
   <!-- Edit Stock Modal -->
-  <div x-show="editStockOpen" x-cloak class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 backdrop-blur-sm animate-fade-in">
-    <div @click.away="editStockOpen = false" class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-      <div class="flex justify-between items-center border-b pb-2 mb-4">
-          <h3 class="text-xl font-bold text-gray-800">Edit Stock Details</h3>
-          <button @click="editStockOpen = false" class="text-gray-400 hover:text-gray-600 transition"><i class="fas fa-times"></i></button>
-      </div>
-
-      <form action="process_edit_stock.php" method="POST" class="space-y-4">
-        <input type="hidden" name="stock_id" x-model="editData.id">
-        
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">Supplier</label>
-          <select id="editSupplierSelect" name="supplier_id" x-model="editData.supplier_id" 
-                  @change="fetchProducts($event.target.value, 'editProductSelect')"
-                  class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)]">
-              <option value="">Select Supplier</option>
-              <?php foreach ($supplier_list as $sup): ?>
-                  <option value="<?= $sup['supplier_id'] ?>"><?= e($sup['supplier_name']) ?></option>
-              <?php endforeach; ?>
-          </select>
+<div x-show="editStockOpen" x-cloak
+     class="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 backdrop-blur-sm">
+    <div @click.away="editStockOpen = false"
+         class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center border-b pb-2 mb-4">
+            <h3 class="text-xl font-bold">Edit Stock Details</h3>
+            <button type="button"
+                    @click="editStockOpen=false"
+                    class="text-gray-500 hover:text-black">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">Product</label>
-          <select id="editProductSelect" name="product_id" x-model="editData.product_id" class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)]">
-              <option value="">Select Supplier First</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">Supplier Price</label>
-              <input type="number" step="0.01" name="supplier_price" x-model="editData.supplier_price" class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)]">
+        <form action="/controllers/process_edit_stock.php" method="POST">
+            <!-- IMPORTANT -->
+            <input type="hidden" name="stock_id" x-model="editData.id">
+            <div class="mb-3">
+                <label class="font-semibold block mb-1">
+                    Supplier
+                </label>
+                <select
+                    id="editSupplierSelect"
+                    name="supplier_id"
+                    x-model="editData.supplier_id"
+                    @change="fetchProducts($event.target.value,'editProductSelect')"
+                    class="border rounded-lg w-full p-2">
+                    <option value="">Select Supplier</option>
+                    <?php foreach($supplier_list as $sup): ?>
+                        <option value="<?= $sup['supplier_id'] ?>">
+                            <?= htmlspecialchars($sup['supplier_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">Seller Price</label>
-              <input type="number" step="0.01" name="price" x-model="editData.price" class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)]">
+            <div class="mb-3">
+                <label class="font-semibold block mb-1">
+                    Product
+                </label>
+                <select
+                    id="editProductSelect"
+                    name="product_id"
+                    x-model="editData.product_id"
+                    class="border rounded-lg w-full p-2">
+                    <option value="">Loading...</option>
+                </select>
             </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">Color</label>
-              <select name="color_id" x-model="editData.color_id" class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)]">
-                  <option value="">None (Optional)</option>
-                  <?php foreach ($color_list as $c): ?>
-                      <option value="<?= $c['color_id'] ?>"><?= e($c['color']) ?></option>
-                  <?php endforeach; ?>
-              </select>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="font-semibold block mb-1">
+                        Supplier Price
+                    </label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="supplier_price"
+                        x-model="editData.supplier_price"
+                        class="border rounded-lg w-full p-2">
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1">
+                        Seller Price
+                    </label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="price"
+                        x-model="editData.price"
+                        class="border rounded-lg w-full p-2">
+                </div>
             </div>
-            <div>
-              <label class="block text-sm font-bold text-gray-700 mb-1">Size</label>
-              <select name="size_id" x-model="editData.size_id" class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)]">
-                  <option value="">None (Optional)</option>
-                  <?php foreach ($size_list as $s): ?>
-                      <option value="<?= $s['size_id'] ?>"><?= e($s['size']) ?></option>
-                  <?php endforeach; ?>
-              </select>
+            <div class="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                    <label class="font-semibold block mb-1">
+                        Color
+                    </label>
+                    <select
+                        name="color_id"
+                        x-model="editData.color_id"
+                        class="border rounded-lg w-full p-2">
+                        <option value="">None</option>
+                        <?php foreach($color_list as $c): ?>
+                            <option value="<?= $c['color_id'] ?>">
+                                <?= htmlspecialchars($c['color']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-semibold block mb-1">
+                        Size
+                    </label>
+                    <select
+                        name="size_id"
+                        x-model="editData.size_id"
+                        class="border rounded-lg w-full p-2">
+                        <option value="">None</option>
+                        <?php foreach($size_list as $s): ?>
+                            <option value="<?= $s['size_id'] ?>">
+                                <?= htmlspecialchars($s['size']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
-        </div>
-
-        <div>
-          <label class="block text-sm font-bold text-gray-700 mb-1">Quantity</label>
-          <input type="number" name="new_quantity" x-model="editData.qty" min="0" class="border border-gray-300 w-full p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--rose)] font-semibold text-gray-800" required>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-2">
-          <button type="button" @click="editStockOpen=false" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition">Cancel</button>
-          <button type="submit" class="bg-[var(--rose)] hover:bg-[var(--rose-hover)] text-white px-4 py-2 rounded-lg text-sm font-medium transition">Update</button>
-        </div>
-      </form>
+            <div class="mt-3">
+                <label class="font-semibold block mb-1">
+                    Quantity
+                </label>
+                <input
+                    type="number"
+                    name="new_quantity"
+                    min="0"
+                    x-model="editData.qty"
+                    class="border rounded-lg w-full p-2">
+            </div>
+            <div class="flex justify-end gap-3 mt-5">
+                <button
+                    type="button"
+                    @click="editStockOpen=false"
+                    class="px-4 py-2 bg-gray-200 rounded-lg">
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="px-4 py-2 bg-rose-500 text-white rounded-lg">
+                    Update
+                </button>
+            </div>
+        </form>
     </div>
-  </div>
-
+</div>
 </div> 
 <!-- 🔴 END GLOBAL WRAPPER -->
 
 <script>
-// NProgress Logic
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', (e) => {
-            if(link.getAttribute('href').startsWith('#') || link.getAttribute('href').startsWith('javascript') || link.target === '_blank') return;
+        link.addEventListener('click', () => {
+            if (
+                link.getAttribute('href').startsWith('#') ||
+                link.getAttribute('href').startsWith('javascript') ||
+                link.target === '_blank'
+            ) {
+                return;
+            }
             NProgress.start();
         });
     });
@@ -575,69 +690,104 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('pageshow', () => NProgress.done());
 });
 
-function onProductChange(selectElement) {
-    const selectedOption = selectElement.options[selectElement.selectedIndex];
-    
-    // 1. Fill Prices
-    const supplierPrice = selectedOption.getAttribute('data-supplier-price');
-    const sellerPrice = selectedOption.getAttribute('data-seller-price');
 
-    const supInput = document.getElementById('stockInSupplierPrice');
-    const sellInput = document.getElementById('stockInSellerPrice');
-    
-    if(supInput) supInput.value = supplierPrice || '';
-    if(sellInput) sellInput.value = sellerPrice || '';
-
-    // 2. Auto-select Default Supplier if available (But allow user to change it)
-    const defaultSupplierId = selectedOption.getAttribute('data-default-supplier');
-    const supplierSelect = document.getElementById('supplierSelect');
-    
-    if (supplierSelect && defaultSupplierId) {
-        supplierSelect.value = defaultSupplierId;
+function onProductChange(select) {
+    if (!select.value) return;
+    const option = select.options[select.selectedIndex];
+    const supplierPrice =
+        option.dataset.supplierPrice || '';
+    const sellerPrice =
+        option.dataset.sellerPrice || '';
+    const supplierId =
+        option.dataset.defaultSupplier || '';
+    document.getElementById('stockInSupplierPrice').value =
+        supplierPrice;
+    document.getElementById('stockInSellerPrice').value =
+        sellerPrice;
+    if (supplierId) {
+        document.getElementById('supplierSelect').value =
+            supplierId;
     }
 }
+
 
 function fetchProducts(supplierId, targetSelectId, preSelectedId = null) {
-    const productSel = document.getElementById(targetSelectId);
-    
-    if (!supplierId) {
-        productSel.innerHTML = '<option value="">Select Supplier First</option>';
+    console.log("Supplier:", supplierId);
+    const select = document.getElementById(targetSelectId);
+    if (!select) {
+        console.error("Select not found:", targetSelectId);
         return;
     }
-    productSel.innerHTML = '<option>Loading...</option>';
-
-    fetch('fetch_products_by_supplier.php?supplier_id=' + encodeURIComponent(supplierId))
-      .then(response => response.json())
-      .then(data => {
-        productSel.innerHTML = '<option value="">Select Product</option>';
-        
-        if (!Array.isArray(data) || data.length === 0) {
-            productSel.innerHTML = '<option value="">No products found</option>';
-            return;
-        }
-
-        data.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.product_id;
-            opt.textContent = p.product_name;
-            opt.setAttribute('data-supplier-price', p.supplier_price);
-            opt.setAttribute('data-seller-price', p.price_id);
-            productSel.appendChild(opt);
-        });
-        
-        if (preSelectedId) {
-            productSel.value = preSelectedId;
-            const root = document.querySelector('[x-data]');
-            if(root && root.__x) {
-                root.__x.$data.editData.product_id = preSelectedId;
+    select.innerHTML = "<option>Loading...</option>";
+    fetch("/controllers/fetch_products_by_supplier.php?supplier_id=" + supplierId)
+        .then(response => {
+            console.log(response.status);
+            if (!response.ok) {
+                throw new Error("HTTP " + response.status);
             }
-        }
-      })
-      .catch(error => { 
-          console.error('Error:', error);
-          productSel.innerHTML = '<option value="">Error loading products</option>'; 
-      });
+            return response.json();
+        })
+        .then(products => {
+            console.log(products);
+            select.innerHTML = "";
+            if (!products.length) {
+                select.innerHTML =
+                    "<option value=''>No products found</option>";
+                return;
+            }
+            products.forEach(product => {
+                const option = document.createElement("option");
+                option.value = product.product_id;
+                option.textContent = product.product_name;
+                option.dataset.supplierPrice = product.supplier_price;
+                option.dataset.sellerPrice = product.price_id;
+                select.appendChild(option);
+            });
+            if (preSelectedId) {
+                select.value = preSelectedId;
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            select.innerHTML =
+                "<option value=''>Unable to load products</option>";
+
+        });
+
 }
+
+// =========================
+// EDIT PRODUCT CHANGE
+// =========================
+document.addEventListener('DOMContentLoaded', () => {
+
+    const editProduct =
+        document.getElementById('editProductSelect');
+
+    if (!editProduct) return;
+
+    editProduct.addEventListener('change', function () {
+
+        const option =
+            this.options[this.selectedIndex];
+
+        const root =
+            document.querySelector('[x-data]');
+
+        if (!root || !root.__x) return;
+
+        root.__x.$data.editData.product_id =
+            this.value;
+
+        root.__x.$data.editData.supplier_price =
+            option.dataset.supplierPrice || 0;
+
+        root.__x.$data.editData.price =
+            option.dataset.sellerPrice || 0;
+
+    });
+
+});
 </script>
 </body>
 </html>

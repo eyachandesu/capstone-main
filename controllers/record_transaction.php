@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // Get the JSON payload from the request body
 $data = json_decode(file_get_contents('php://input'), true);

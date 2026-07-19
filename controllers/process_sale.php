@@ -92,17 +92,7 @@ $stmt->close();
             $stmt->close();
         }
 
-        // 🔹 Insert transaction
-        $customer_id = 1;
-        $stmt = $conn->prepare("
-            INSERT INTO transactions 
-                (order_id, customer_id, payment_method_id, total, order_status_id, date_time) 
-            VALUES (?, ?, ?, ?, 1, NOW())
-        ");
-        $stmt->bind_param("iiid", $order_id, $customer_id, $payment_method, $total);
-        $stmt->execute();
-        $transaction_id = $stmt->insert_id;
-        $stmt->close();
+
 
         $conn->commit();
 

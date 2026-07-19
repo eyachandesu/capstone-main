@@ -1,5 +1,4 @@
 <?php
-session_start();
 // require 'admin_only.php'; // Uncomment if you have this file
 require_once __DIR__ . '/../config/config.php';
 
@@ -220,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reset_database'])) {
         <span x-show="sidebarOpen">System Settings</span>
       </a>
 
-      <a href="logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
+      <a href="/controllers/logout.php" class="block px-4 py-3 text-red-600 hover:bg-red-50 rounded-md flex items-center" :class="sidebarOpen ? 'space-x-2' : 'justify-center px-0'">
         <i class="fas fa-sign-out-alt w-5 text-center text-lg"></i>
         <span x-show="sidebarOpen">Logout</span>
       </a>
@@ -299,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reset_database'])) {
                     <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100">
                         <h3 class="font-bold text-blue-700 flex items-center"><i class="fas fa-download mr-2"></i> System Backup</h3>
                         <p class="text-xs text-blue-600/70 mb-4 mt-1">Export all system data into a secure .sql file for safekeeping.</p>
-                        <form action="backup_logic.php" method="POST">
+                        <form action="/controllers/backup_logic.php" method="POST">
                             <button type="submit" name="backup_db" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-lg transition text-xs shadow-sm">
                                 GENERATE BACKUP
                             </button>
@@ -310,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['reset_database'])) {
                     <div class="p-4 rounded-2xl bg-red-50 border border-red-100">
                         <h3 class="font-bold text-red-700 flex items-center"><i class="fas fa-exclamation-triangle mr-2"></i> Emergency Restore</h3>
                         <p class="text-xs text-red-600/70 mb-4 mt-1">Warning: Restoring will permanently delete and replace all current data.</p>
-                        <form action="restore_logic.php" method="POST" enctype="multipart/form-data" onsubmit="return confirm('Are you absolutely sure? Current data will be lost.')">
+                        <form action="/controllers/restore_logic.php" method="POST" enctype="multipart/form-data" onsubmit="return confirm('Are you absolutely sure? Current data will be lost.')">
                             <input type="file" name="backup_file" required class="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 mb-4 cursor-pointer">
                             <button type="submit" name="restore_db" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-lg transition text-xs shadow-sm">
                                 RESTORE SYSTEM

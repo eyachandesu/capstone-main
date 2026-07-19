@@ -1,25 +1,30 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../controllers/admin_only.php';
+// config.php already calls session_start() with a working save path -
+// don't call session_start() directly here.
 
 // ✅ Validate user ID
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     $_SESSION['message'] = "Invalid User ID!";
-    header("Location: manage_users.php");
+    header("Location: /manage_users.php");
     exit();
 }
 
 $admin_id = (int) $_GET['id'];
 
 // ✅ Fetch user details including role
-$stmt = $conn->prepare("SELECT admin_id, username, admin_email, first_name, last_name, role_id FROM adminusers WHERE admin_id = ?");
+// NOTE: admin_email removed - this column doesn't exist in adminusers,
+// and the form below never collected it either. If you want admins to
+// have emails, that needs a schema change + a form field, not just this.
+$stmt = $conn->prepare("SELECT admin_id, username, first_name, last_name, role_id FROM adminusers WHERE admin_id = ?");
 $stmt->bind_param("i", $admin_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows == 0) {
     $_SESSION['message'] = "User not found!";
-    header("Location: manage_users.php");
+    header("Location: /manage_users.php");
     exit();
 }
 
@@ -41,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $types = "";
 
     $username = trim($_POST['username']);
-    $email = trim($_POST['admin_email']);
     $first_name = trim($_POST['first_name']);
     $last_name = trim($_POST['last_name']);
     $role_id = (int) $_POST['role_id'];
@@ -49,11 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!empty($username) && $username !== $user['username']) {
         $updates[] = "username = ?";
         $params[] = $username;
-        $types .= "s";
-    }
-    if (!empty($email) && $email !== $user['admin_email']) {
-        $updates[] = "admin_email = ?";
-        $params[] = $email;
         $types .= "s";
     }
     if (!empty($first_name) && $first_name !== $user['first_name']) {
@@ -78,11 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (!empty($_POST['new_password']) || !empty($_POST['confirm_password'])) {
         if ($_POST['new_password'] !== $_POST['confirm_password']) {
             $_SESSION['message'] = "Passwords do not match!";
-            header("Location: edit_user.php?id=$admin_id");
+            header("Location: /edit_user.php?id=$admin_id");
             exit();
         } elseif (strlen($_POST['new_password']) < 6) {
             $_SESSION['message'] = "Password must be at least 6 characters long!";
-            header("Location: edit_user.php?id=$admin_id");
+            header("Location: /edit_user.php?id=$admin_id");
             exit();
         } else {
             $hashed_password = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
@@ -103,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         if ($stmt->execute()) {
             $_SESSION['success'] = "User details updated successfully!";
-            header("Location: manage_users.php");
+            header("Location: /manage_users.php");
             exit();
         } else {
             $_SESSION['message'] = "Error: " . $stmt->error;
@@ -113,8 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['message'] = "No changes were made.";
     }
 }
-
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -165,7 +162,7 @@ input, button, select {
       </div>
     <?php endif; ?>
 
-    <form method="POST" action="edit_user.php?id=<?= $admin_id; ?>" class="space-y-5">
+    <form method="POST" action="/edit_user.php?id=<?= $admin_id; ?>" class="space-y-5">
       
  <!-- First & Last Name -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -227,7 +224,7 @@ input, button, select {
           class="flex-1 bg-[var(--rose)] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[var(--rose-hover)] shadow-md">
           <i class="fas fa-save mr-2"></i> Update User
         </button>
-        <a href="manage_users.php"
+        <a href="/manage_users.php"
           class="flex-1 bg-gray-100 text-gray-700 px-6 py-3 text-center rounded-lg font-medium hover:bg-gray-200 shadow-sm">
           Cancel
         </a>

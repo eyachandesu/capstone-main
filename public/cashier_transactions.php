@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/config.php';
 ini_set('display_errors', 0); 
 error_reporting(E_ALL);
@@ -44,25 +43,100 @@ if ($startDate === $endDate) {
    1. MAIN QUERY
 ============================================================= */
 $query = "
-    SELECT
-        o.order_id,
-        COALESCE(o.transaction_id, CONCAT('ORD-', o.order_id)) AS transaction_display_id,
-        o.total_amount, o.cash_given, o.changes, o.created_at,
-        pm.payment_method_name, os.order_status_name AS status,
-        COUNT(oi.id) AS total_items,
-        GROUP_CONCAT(CONCAT(oi.qty, '***', COALESCE(p.product_name, 'Unknown'), '***', COALESCE(sz.size, oi.size, '-'), '***', COALESCE(cl.color, oi.color, '-'), '***', COALESCE(p.price_id, 0)) SEPARATOR '///') as item_details,
-        (SELECT GROUP_CONCAT(CONCAT(r.refund_id, '***', r.order_item_id, '***', r.refund_amount, '***', COALESCE(pr.product_name, 'Unknown'), '***', COALESCE(sz2.size, '-'), '***', COALESCE(cl2.color, '-'), '***', r.refunded_at) SEPARATOR '///') FROM refunds r LEFT JOIN order_items oi2 ON r.order_item_id = oi2.id LEFT JOIN products pr ON r.product_id = pr.product_id LEFT JOIN sizes sz2 ON r.size_id = sz2.size_id LEFT JOIN colors cl2 ON r.color_id = cl2.color_id WHERE r.order_id = o.order_id) as refund_details
-    FROM orders o
-    LEFT JOIN order_items oi ON o.order_id = oi.order_id
-    LEFT JOIN products p ON oi.product_id = p.product_id
-    LEFT JOIN payment_methods pm ON o.payment_method_id = pm.payment_method_id
-    LEFT JOIN order_status os ON o.order_status_id = os.order_status_id
-    LEFT JOIN stock st ON oi.stock_id = st.stock_id
-    LEFT JOIN sizes sz ON st.size_id = sz.size_id
-    LEFT JOIN colors cl ON st.color_id = cl.color_id
-    WHERE $dateCondition AND o.admin_id = ?
-    GROUP BY o.order_id
-    ORDER BY o.created_at DESC
+SELECT
+    o.order_id,
+    CONCAT('ORD-', LPAD(o.order_id, 6, '0')) AS transaction_display_id,
+    o.total_amount,
+    o.cash_given,
+    o.changes,
+    o.created_at,
+    pm.payment_method_name,
+    os.order_status_name AS status,
+    COUNT(DISTINCT oi.id) AS total_items,
+
+    GROUP_CONCAT(
+        CONCAT(
+            oi.qty,
+            '***',
+            COALESCE(p.product_name, 'Unknown'),
+            '***',
+            COALESCE(sz.size, oi.size, '-'),
+            '***',
+            COALESCE(cl.color, oi.color, '-'),
+            '***',
+            oi.price
+        )
+        SEPARATOR '///'
+    ) AS item_details,
+
+    (
+        SELECT GROUP_CONCAT(
+            CONCAT(
+                r.refund_id,
+                '***',
+                r.order_item_id,
+                '***',
+                r.refund_amount,
+                '***',
+                COALESCE(pr.product_name, 'Unknown'),
+                '***',
+                COALESCE(sz2.size, '-'),
+                '***',
+                COALESCE(cl2.color, '-'),
+                '***',
+                r.refunded_at
+            )
+            SEPARATOR '///'
+        )
+        FROM refunds r
+        LEFT JOIN order_items oi2
+            ON r.order_item_id = oi2.id
+        LEFT JOIN products pr
+            ON oi2.product_id = pr.product_id
+        LEFT JOIN sizes sz2
+            ON r.size_id = sz2.size_id
+        LEFT JOIN colors cl2
+            ON r.color_id = cl2.color_id
+        WHERE r.order_id = o.order_id
+    ) AS refund_details
+
+FROM orders o
+
+LEFT JOIN order_items oi
+    ON o.order_id = oi.order_id
+
+LEFT JOIN products p
+    ON oi.product_id = p.product_id
+
+LEFT JOIN payment_methods pm
+    ON o.payment_method_id = pm.payment_method_id
+
+LEFT JOIN order_status os
+    ON o.order_status_id = os.order_status_id
+
+LEFT JOIN stock st
+    ON oi.stock_id = st.stock_id
+
+LEFT JOIN sizes sz
+    ON st.size_id = sz.size_id
+
+LEFT JOIN colors cl
+    ON st.color_id = cl.color_id
+
+WHERE
+    $dateCondition
+    AND o.admin_id = ?
+
+GROUP BY
+    o.order_id,
+    o.total_amount,
+    o.cash_given,
+    o.changes,
+    o.created_at,
+    pm.payment_method_name,
+    os.order_status_name
+
+ORDER BY o.created_at DESC
 ";
 
 $stmt = $conn->prepare($query);
@@ -198,7 +272,7 @@ $chartStmt->close();
         <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-sm shadow-sm shrink-0"><?= strtoupper(substr($cashier_name,0,1)) ?></div>
         <div class="sidebar-text overflow-hidden">
             <p class="text-sm font-bold text-slate-700 truncate"><?= htmlspecialchars($cashier_name) ?></p>
-            <form action="logout.php" method="POST"><button class="text-xs text-rose-500 font-medium hover:underline">Sign Out</button></form>
+            <form action="/controllers/logout.php" method="POST"><button class="text-xs text-rose-500 font-medium hover:underline">Sign Out</button></form>
         </div>
     </div>
 </aside>

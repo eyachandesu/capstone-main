@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/../config/config.php';
 
 // --- SETTINGS ---
@@ -89,25 +88,59 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_order_details') {
 }
 
 /* ========================================================
-   API: GET ORDER ID BY TRANSACTION ID
+   API: GET ORDER FROM ORDER NUMBER
 ======================================================== */
+
 if (isset($_GET['action']) && $_GET['action'] === 'get_order_id_by_transaction') {
+
     while (ob_get_level()) ob_end_clean();
     header('Content-Type: application/json');
+
     try {
-        if (!isset($_GET['tid'])) throw new Exception("Missing Transaction ID");
-        $tid = trim($_GET['tid']);
-        $stmt = $conn->prepare("SELECT order_id FROM orders WHERE transaction_id = ? LIMIT 1");
-        $stmt->bind_param("s", $tid); 
-        $stmt->execute();
-        $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc()) {
-            echo json_encode(['status' => 'success', 'order_id' => $row['order_id']]);
-        } else {
-            throw new Exception("Transaction ID '$tid' not found.");
+
+        if (empty($_GET['tid'])) {
+            throw new Exception("Missing Order Number");
         }
+
+        // ORD-000085 -> 85
+        $order_id = intval(str_replace("ORD-", "", $_GET['tid']));
+
+        $stmt = $conn->prepare("
+            SELECT order_id
+            FROM orders
+            WHERE order_id = ?
+            LIMIT 1
+        ");
+
+        $stmt->bind_param("i", $order_id);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+
+        if ($row = $result->fetch_assoc()) {
+
+            echo json_encode([
+                "status"=>"success",
+                "order_id"=>$row['order_id']
+            ]);
+
+        } else {
+
+            throw new Exception("Order not found.");
+
+        }
+
         $stmt->close();
-    } catch (Exception $e) { echo json_encode(['status' => 'error', 'message' => $e->getMessage()]); }
+
+    } catch(Exception $e){
+
+        echo json_encode([
+            "status"=>"error",
+            "message"=>$e->getMessage()
+        ]);
+
+    }
+
     exit;
 }
 
@@ -212,15 +245,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
         $conn->begin_transaction();
         try {
             $trx_id = "TRX-" . strtoupper(uniqid());
-            $sql = "INSERT INTO orders (admin_id, total_amount, discount_amount, cash_given, changes, order_status_id, created_at, payment_method_id, transaction_id) VALUES (?, ?, ?, ?, ?, 0, NOW(), ?, ?)";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("iddddis", $admin_id, $total, $overall_discount_amt, $cash_given, $changes, $payment_method_id, $trx_id);
-            $stmt->execute();
-            $order_id = $stmt->insert_id;
-            
-            $pretty_trx = "TRX-" . date("Y") . "-" . str_pad($order_id, 5, "0", STR_PAD_LEFT);
-            $conn->query("UPDATE orders SET transaction_id = '$pretty_trx' WHERE order_id = $order_id");
-            $stmt->close();
+                $sql = "INSERT INTO orders (
+                    admin_id,
+                    total_amount,
+                    discount_amount,
+                    cash_given,
+                    changes,
+                    order_status_id,
+                    created_at,
+                    payment_method_id
+                ) VALUES (?, ?, ?, ?, ?, 0, NOW(), ?)";
+
+                $stmt = $conn->prepare($sql);
+
+                $stmt->bind_param(
+                    "iddddi",
+                    $admin_id,
+                    $total,
+                    $overall_discount_amt,
+                    $cash_given,
+                    $changes,
+                    $payment_method_id
+                );
+
+                $stmt->execute();
+
+                $order_id = $stmt->insert_id;
+
+                $stmt->close();
 
             $itemStmt = $conn->prepare("INSERT INTO order_items (order_id, product_id, color, size, stock_id, qty, price, discount_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($cart as $item) {
@@ -242,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             $itemStmt->close();
             $conn->query("INSERT INTO transactions (order_id, customer_id, payment_method_id, total, order_status_id, date_time) VALUES ($order_id, NULL, $payment_method_id, $total, 0, NOW())");
             $conn->commit();
-            echo "<script>alert('Transaction successful! Transaction #: $pretty_trx'); window.location.href='receipt.php?order_id=$order_id';</script>";
+            echo "<script>alert('Transaction successful!'); window.location.href='receipt.php?order_id=$order_id';</script>";
             exit;
         } catch (Exception $e) { $conn->rollback(); echo "<script>alert('Error: " . addslashes($e->getMessage()) . "');</script>"; }
     }
@@ -310,7 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
         <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-bold text-sm shadow-sm shrink-0"><?= strtoupper(substr($cashier_name,0,1)) ?></div>
         <div class="sidebar-text overflow-hidden">
             <p class="text-sm font-bold text-slate-700 truncate"><?= htmlspecialchars($cashier_name) ?></p>
-            <form action="logout.php" method="POST"><button class="text-xs text-rose-500 font-medium hover:underline">Sign Out</button></form>
+            <form action="/controllers/logout.php" method="POST"><button class="text-xs text-rose-500 font-medium hover:underline">Sign Out</button></form>
         </div>
     </div>
 </aside>

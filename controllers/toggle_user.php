@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once __DIR__ . '/../config/conn.php';
+require_once __DIR__ . '/../config/config.php';
 
 // ✅ Only Admin (role_id = 2) can toggle user status
 if (!isset($_SESSION['admin_id']) || $_SESSION['role_id'] != 2) {
